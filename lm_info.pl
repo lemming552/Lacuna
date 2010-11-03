@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use Games::Lacuna::Client;
+use YAML::Any;
 
 my $config_file = shift @ARGV;
 usage() if not defined $config_file or not -e $config_file;
@@ -12,7 +13,7 @@ print "[+] target: '$target_empire'\n";
 
 my $client = Games::Lacuna::Client->new(
   cfg_file => $config_file,
-   debug => 1,
+  #debug => 1,
 );
 
 $SIG{INT} = sub {
@@ -24,12 +25,14 @@ $SIG{INT} = sub {
 my $stats = $client->stats;
 
 my $info = $stats->find_empire_rank('empire_size_rank', $target_empire);
+print Dump( $info->{empires} );
 
 print "\n";
 my $emp_id = $$info{'empires'}[0]{'empire_id'};
 
 my $emp = $client->empire(id => $emp_id);
 my $more_info = $emp->view_public_profile();
+print Dump( $more_info->{profile} );
 
 exit;
 
