@@ -1,8 +1,12 @@
 #!/usr/bin/perl
 #
-# Script to parse thru missions and make a csv file
+# Script to parse thru missions
 #
 # Usage: perl parse_missions.pl mission_files
+#
+# Produces files of mission_name.yml
+# If -b switch used, prints to STDOUT the entire list that can be redirected to one file.
+# Seperate files are good for comparing while the big list is good for scanning thru
 #  
 use strict;
 use warnings;
