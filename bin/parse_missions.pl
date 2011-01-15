@@ -1,63 +1,41 @@
 #!/usr/bin/perl
 #
-# Script to parse thru missions
+# Script to pretty up JSON missions
 #
 # Usage: perl parse_missions.pl mission_files
 #
-# Produces files of mission_name.yml
-# If -b switch used, prints to STDOUT the entire list that can be redirected to one file.
-# Seperate files are good for comparing while the big list is good for scanning thru
+# Rewrites files of in more readable format
 #  
 use strict;
 use warnings;
 use JSON;
-use YAML;
-use YAML::Dumper;
-use Getopt::Long qw(GetOptions);
 
-my $bigfile = 0;
-GetOptions(
-  'big' => \$bigfile,
-);
-
-my $yaml_out;
-my %mission_hash;
-if ($bigfile) {
-  $yaml_out = YAML::Dumper->new;
-  $yaml_out->indent_width(4);
-}
-
+  my %mission_hash;
   
   my $filename;
   for $filename (@ARGV) {
     next unless -e $filename;
-    my $nfile =  $filename.".yml";
-    my $data = process_mission($filename);
-    explode($nfile, $data);
-    if ($bigfile) {
-      $mission_hash{$filename} = $data;
-    }
-  }
-  if ($bigfile) {
-    print $yaml_out->dump(\%mission_hash);
+    next unless $filename =~ /\.mission$|\.part[0-9]/;
+    my $status = process_mission($filename);
+    print "$status - $filename\n";
   }
 
 exit;
 
-sub explode {
-  my ($nfile, $data, $bigfile) = @_;
-  my $dumper = YAML::Dumper->new;
-  $dumper->indent_width(4);
-  open(EXP, ">", "$nfile") or die "Could not open $nfile!";
-  print EXP $dumper->dump($data);
-  close(EXP);
-}
-
 sub process_mission {
   my ($file) = @_;
-  open(MISSION, "$file") or die "Bad mission file: $file\n";
-
-  my @afile = <MISSION>;
+  my $json = JSON->new->utf8(1);
+  $json = $json->pretty([1]);
+  $json = $json->canonical([1]);
+  open(MISSION, "$file") or return 0;
+  my $header = <MISSION>;
+  chomp($header);
+  my $lines = join ("",<MISSION>);
+  my $json_txt = $json->decode($lines);
   close(MISSION);
-  return decode_json($afile[1]);
+  open(MISSION, ">", "$file") or return 0;
+  print MISSION $header, "\n";
+  print MISSION $json->encode($json_txt);
+  close(MISSION);
+  return 1;
 }
