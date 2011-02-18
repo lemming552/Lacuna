@@ -1,9 +1,6 @@
 #!/usr/bin/perl
 #
-# Script to find all bodies known to you (via observatories)
-# Will spit out a csv list of them for further data extractions
-#
-# Usage: perl probes.pl
+# Usage: probes.pl -h
 #  
 
 use strict;
@@ -12,20 +9,19 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client;
 use Getopt::Long qw(GetOptions);
+use Date::Parse;
+use Date::Format;
 use YAML::XS;
 use utf8;
 
-my $probe_file = "data/probe_data.yml";
+my $probe_file = "data/probe_data_raw.yml";
 my $cfg_file = "lacuna.yml";
-my $clean    = 0;
 my $help    = 0;
-my $empire   = '';
 
 GetOptions(
   'output=s' => \$probe_file,
-  'clean' => \$clean,
+  'config=s' => \$cfg_file,
   'help' => \$help,
-  'empire=s' => \$empire,
 );
   
   my $client = Games::Lacuna::Client->new(
@@ -41,11 +37,12 @@ GetOptions(
   my $data = $client->empire->view_species_stats();
 
 # Get planets
-  my $planets        = $data->{status}->{empire}->{planets};
-  my $home_planet_id = $data->{status}->{empire}->{home_planet_id}; 
-  my $home_stat      = $client->body(id => $home_planet_id)->get_status();
-  my $ename          = $home_stat->{body}->{empire}->{'name'};
-  my ($hx,$hy)       = @{$home_stat->{body}}{'x','y'};
+  my $planets = $data->{status}->{empire}->{planets};
+  my $ename   = $data->{status}->{empire}->{name};
+  my $ststr   = $data->{status}->{server}->{time};
+  my $stime   = str2time( map { s!^(\d+)\s+(\d+)\s+!$2/$1/!; $_ } $ststr);
+  my $ttime   = ctime($stime);
+  print "$ttime\n";
 
 # Get obervatories;
   my @observatories;
@@ -54,80 +51,60 @@ GetOptions(
     push @observatories, grep { $buildings->{$_}->{url} eq '/observatory' } keys %$buildings;
   }
 
-  print "Observatory IDs: ".join(q{, },@observatories)."\n";
-
 # Find stars
   my @stars;
   my @star_bit;
   for my $obs_id (@observatories) {
+    my $obs_view  = $client->building( id => $obs_id, type => 'Observatory' )->view();
     my $pages = 1;
+    my $num_probed = 0;
     do {
-      my $obs_stuff = $client->building( id => $obs_id, type => 'Observatory' )->get_probed_stars($pages++);
-      @star_bit = @{$obs_stuff->{stars}};
+      my $obs_probe = $client->building( id => $obs_id, type => 'Observatory' )->get_probed_stars($pages++);
+      $num_probed = $obs_probe->{star_count};
+      @star_bit = @{$obs_probe->{stars}};
       if (@star_bit) {
         for my $star (@star_bit) {
           $star->{observatory} = {
-            oid => $obs_id,
-            name => $obs_stuff->{status}->{body}->{name},
-            pid => $obs_stuff->{status}->{body}->{id},
+            empire => $ename,
+            oid    => $obs_id,
+            pid    => $obs_probe->{status}->{body}->{id},
+            pname  => $obs_probe->{status}->{body}->{name},
+            stime  => $stime,
+            ststr  => $ststr,
           }
         }
         push @stars, @star_bit;
       }
-    } until (@star_bit == 0)
+    } until (@star_bit == 0);
+    printf "%-12s: %2d Level: %2d Probes: %2d of %2d\n", $obs_view->{status}->{body}->{name}, $obs_id, $obs_view->{building}->{level},
+                                                       $num_probed, $obs_view->{building}->{level} * 3;
   }
 
 # Gather planet data
   my @bodies;
+  my %bod_id;
   for my $star (@stars) {
     my @tbod;
-# Right now we sanitize or look for particular empires here.  This should be post process.
-    if ($clean or $empire ne '') {
-      for my $bod ( @{$star->{bodies}} ) {
-        $bod->{observatory} = {
-          oid  => $star->{observatory}->{oid},
-          name => $star->{observatory}->{name},
-          pid  => $star->{observatory}->{pid},
-        };
-        if ($empire ne '' and defined($bod->{empire})) {
-          push @tbod, $bod if $bod->{empire}->{name} =~ /$empire/;
-        }
-        elsif (defined($bod->{empire}) && ($clean && ($bod->{empire}->{name} eq "$ename"))) {
-          delete $bod->{building_count};
-#          delete $bod->{empire};
-          delete $bod->{energy_capacity};
-          delete $bod->{energy_hour};
-          delete $bod->{energy_stored};
-          delete $bod->{food_capacity};
-          delete $bod->{food_hour};
-          delete $bod->{food_stored};
-          delete $bod->{happiness};
-          delete $bod->{happiness_hour};
-          delete $bod->{needs_surface_refresh};
-          delete $bod->{ore_capacity};
-          delete $bod->{ore_hour};
-          delete $bod->{ore_stored};
-          delete $bod->{plots_available};
-          delete $bod->{population};
-          delete $bod->{waste_capacity};
-          delete $bod->{waste_hour};
-          delete $bod->{waste_stored};
-          delete $bod->{water_capacity};
-          delete $bod->{water_hour};
-          delete $bod->{water_stored};
-          push @tbod, $bod;
-        }
+    for my $bod ( @{$star->{bodies}} ) {
+# Check for duplicated probes
+      if (defined($bod_id{$bod->{id}})) {
+        $bod_id{$bod->{id}} = $bod_id{$bod->{id}}.",".$star->{observatory}->{oid};
+        printf "Probe dupe: %d : %s\n", $bod->{id}, $bod_id{$bod->{id}};
       }
-    }
-    else {
-      for my $bod ( @{$star->{bodies}} ) {
-        $bod->{observatory} = {
-          oid  => $star->{observatory}->{oid},
-          name => $star->{observatory}->{name},
-          pid  => $star->{observatory}->{pid},
-        };
-        push @tbod, $bod;
+      else {
+        $bod_id{$bod->{id}} = $star->{observatory}->{oid};
       }
+      $bod->{observatory} = {
+        empire => $star->{observatory}->{empire},
+        oid    => $star->{observatory}->{oid},
+        pid    => $star->{observatory}->{pid},
+        pname  => $star->{observatory}->{pname},
+        stime  => $star->{observatory}->{stime},
+        ststr  => $star->{observatory}->{ststr},
+        lastd  => 0,  # Initialize last Excavator time
+        moved  => [ "nobody" ],
+      };
+      push @tbod, $bod;
     }
     push @bodies, @tbod if (@tbod);
   }
@@ -144,15 +121,14 @@ sub usage {
 Usage: $0 [options]
 
 This program takes all your data on observatories and places it in a YAML file for use by other programs.
+Data contained is all the body data, plus which observatory "owns" the probe for this bit of data.
+Stars may be repeated if multiple observatories probe the same star, but we will report that.  Note that abandoning either probe currently, abandons all probes at the star.
+
 
 Options:
   --help                 - Prints this out
-  --output <file>        - Output file, default: data/probe_data.yml
+  --output <file>        - Output file, default: data/probe_data_raw.yml
 
-These options are deprecated and should be done by a following parser before sharing info or looking up info.
-  --clean                - Removes any detail info of your systems
-  --empire <Empire Name> - Get specified empire
-  
 END
  exit 1;
 }

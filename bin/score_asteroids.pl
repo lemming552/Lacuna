@@ -14,7 +14,7 @@ use utf8;
 
 my $home_x = 0;
 my $home_y = 0;
-my $probe_file = "data/probe_data.yml";
+my $probe_file = "data/probe_data_cmb.yml";
 
 GetOptions(
   'x=i' => \$home_x,
@@ -55,7 +55,7 @@ for $bod (sort byscore @$bodies) {
 }
 
 sub byscore {
-   $b->{ore_total} <=> $a->{ore_total} ||
-   $a->{distance} <=> $b->{distance};
+   $a->{distance} <=> $b->{distance} ||
+   $b->{ore_total} <=> $a->{ore_total};
     
 }

@@ -31,7 +31,7 @@ my @oreabr = ( "ant", "bau", "ber", "cha", "chr", "flu", "gal", "goe", "gol", "g
   my %teore;
   my %neore;
   my %taore;
-  print "Planet,Ship,Name,x,y,Dist,Size,O,Img,MP,ET,OT,";
+  print "Planet,Ship,Name,x,y,Dist,Size,O,Img,MP,ET,OT,OR,";
   print join(",", @oreabr, @oreabr),"\n";
     
   for $plat (sort byplatsort @$platforms) {
@@ -55,33 +55,34 @@ my @oreabr = ( "ant", "bau", "ber", "cha", "chr", "flu", "gal", "goe", "gol", "g
     else { $teore{"$plat->{planet}"} = $ore_etot; }
 
     if (defined($neore{"$plat->{planet}"})) {
-      $neore{"$plat->{planet}"} += int($ore_etot * $ore_atot/10000 +0.5);
+      $neore{"$plat->{planet}"} += int($ore_etot * 10000/$ore_atot +0.5);
     }
-    else { $neore{"$plat->{planet}"} = int($ore_etot * $ore_atot/10000 +0.5); }
+    else { $neore{"$plat->{planet}"} = int($ore_etot * 10000/$ore_atot +0.5); }
 
     if (defined($taore{"$plat->{planet}"})) { $taore{"$plat->{planet}"} += $ore_atot; }
     else { $taore{"$plat->{planet}"} = $ore_atot; }
-    printf "%s,%d,%s,%d,%d,%6.2f,",
+    printf "%s,%d,%s,%d,%d,%6.2f,%d,%d,%s,%d,%d,%d,%5.2f,",
       $plat->{planet},
       $plat->{shipping_capacity},
       $plat->{asteroid}->{name},
       $plat->{asteroid}->{x},
       $plat->{asteroid}->{y},
-      $plat->{distance};
-    print join(",",
+      $plat->{distance},
       $plat->{asteroid}->{size},
       $plat->{asteroid}->{orbit},
       $plat->{asteroid}->{image},
       $plat->{max_platforms},
-      $ore_etot, $ore_atot, @ore_e, @ore_a
+      $ore_etot, $ore_atot, $ore_etot/$ore_atot;
+    print join(",", @ore_e, @ore_a
       );
     print "\n";
   }
-  printf "\n%s,%s,%s,%s,%s\n", "Planet", "Dist", "Asteroid", "Extract", "Normal";
+  printf "\n%s,%s,%s,%s,%s\n", "Planet", "Dist", "Adist", "Asteroid", "Extract", "Normal";
   for my $planet_name (sort keys %tdist) {
-    printf "%s,%6.2f,%d,%d,%d\n",
+    printf "%s,%6.2f,%d,%d,%d,%d\n",
            $planet_name,
            $tdist{"$planet_name"},
+           0,
            $taore{"$planet_name"},
            $teore{"$planet_name"},
            $neore{"$planet_name"};
