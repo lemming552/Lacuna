@@ -2,6 +2,7 @@
 # Need to add provision for adjusting via Oversight, Water, Ore Refineries, etc...
 # Can then make zero adjustment versions, and hopefully not have to calculate
 # per planet
+# updating with old data isn't working right. Fix
 use strict;
 use warnings;
 use FindBin;
@@ -200,30 +201,39 @@ sub diag {
 sub get_url_rejects {
 
   my @rejects = (qw(
-        /pantheonofhagness 
-        /crashedshipsite 
-        /citadelofknope 
-        /templeofthedrajilites 
-        /sand 
-        /grove 
-        /lagoon 
-        /crater 
-        /rockyoutcrop 
-        /lake 
-        /beach1 
-        /beach2 
-        /beach3 
-        /beach4 
-        /beach5 
-        /beach6 
-        /beach7 
-        /beach8 
-        /beach9 
-        /beach10 
-        /beach11 
-        /beach12 
-        /beach13 
-        /denton 
+          /beach1
+          /beach10
+          /beach11
+          /beach12
+          /beach13
+          /beach2
+          /beach3
+          /beach4
+          /beach5
+          /beach6
+          /beach7
+          /beach8
+          /beach9
+          /blackholegenerator
+          /citadelofknope
+          /crashedshipsite
+          /crater
+          /denton
+          /essentiavein
+          /gratchsgauntlet
+          /grove
+          /hallsofvrbansk
+          /kasternskeep
+          /lagoon
+          /lake
+          /libraryofjith
+          /massadshenge
+          /oracleofanid
+          /pantheonofhagness
+          /rockyoutcrop
+          /sand
+          /templeofthedrajilites
+          /thedillonforge
         ),
     );
   return @rejects;
