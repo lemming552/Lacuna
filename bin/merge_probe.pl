@@ -9,10 +9,7 @@
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-# use YAML;
-# use YAML::Dumper;
 use YAML::XS;
-use Data::Dumper;
 use utf8;
 
 my $import_file = "data/probe_data_raw.yml";
@@ -81,7 +78,7 @@ sub merge_probe {
     $orig->{observatory}->{moved} = update_vacate($orig_m, $data_m, $orig_e, $data_e);
   }
   else {
-    my $old_key = mk_key($orig);
+    my $old_key = mk_key($orig, $orig_e);
     $orig->{observatory}->{moved} = update_vacate($data_m, $orig_m, $data_e, $orig_e);
     $orig->{name} = $data->{name};
     $orig->{observatory}->{empire} = $data->{observatory}->{empire};
@@ -90,7 +87,13 @@ sub merge_probe {
     $orig->{observatory}->{pname} = $data->{observatory}->{pname};
     $orig->{observatory}->{stime} = $data->{observatory}->{stime};
     $orig->{observatory}->{ststr} = $data->{observatory}->{ststr};
-    my $new_key = mk_key($orig);
+    if ($data_e ne '') {
+      $orig->{empire}->{alignment}       = $data->{empire}->{alignment};
+      $orig->{empire}->{id}              = $data->{empire}->{id};
+      $orig->{empire}->{is_isolationist} = $data->{empire}->{is_isolationist};
+      $orig->{empire}->{name}            = $data->{empire}->{name};
+    }
+    my $new_key = mk_key($orig, $orig_e);
     printf "Importing $orig->{name}\n" if ($old_key ne $new_key);
     if ($orig_e ne "" and $data_e eq "") {
       delete $orig->{empire};
@@ -121,9 +124,9 @@ sub merge_probe {
 }
 
 sub mk_key {
-  my ($elem) = @_;
+  my ($elem, $ename) = @_;
   return join(":",$elem->{name}, $elem->{observatory}->{empire},
-              $elem->{observatory}->{oid}, $elem->{observatory}->{pid});
+              $elem->{observatory}->{oid}, $elem->{observatory}->{pid}, $ename);
 }
 
 sub update_vacate {
