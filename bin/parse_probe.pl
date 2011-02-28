@@ -34,6 +34,7 @@ GetOptions(
 
 
 for $bod (@$bodies) {
+#  next unless ( defined($bod->{empire}) && $bod->{empire}->{alignment} eq "hostile-isolationist");
   if (not defined($bod->{empire}->{name})) { $bod->{empire}->{name} = "unclaimed"; } 
   if (not defined($bod->{water})) { $bod->{water} = 0; } 
   $bod->{image} =~ s/-.//;

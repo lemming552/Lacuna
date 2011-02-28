@@ -17,7 +17,7 @@ my $home_x = 0;
 my $home_y = 0;
 my $probe_file = "data/probe_data_cmb.yml";
 my $star_file   = "data/stars.csv";
-my $help; my $opt_a = 0; my $opt_g = 0; my $opt_h = 0;
+my $help; my $opt_a = 0; my $opt_g = 0; my $opt_h = 0; my $opt_s;
 
 GetOptions(
   'x=i'        => \$home_x,
@@ -28,18 +28,24 @@ GetOptions(
   'asteroid'   => \$opt_a,
   'gas'        => \$opt_g,
   'habitable'  => \$opt_h,
+  'systems'    => \$opt_s,
 );
   
   usage() if ($help);
+  if ($opt_s) {
+    $opt_a = $opt_g = $opt_h = 1;
+  }
 
   my $bod;
   my $bodies = YAML::XS::LoadFile($probe_file);
   my $stars  = get_stars("$star_file");
 
+  my %sys;
+
 # Calculate some metadata
   for $bod (@$bodies) {
     if (not defined($bod->{water})) { $bod->{water} = 0; }
-    if (not defined($bod->{empire}->{name})) { $bod->{empire}->{name} = "unclaimed"; } 
+    unless (defined($bod->{empire})) { $bod->{empire}->{name} = "unclaimed"; } 
     $bod->{image} =~ s/-.//;
     $bod->{dist}  = sprintf("%.2f", sqrt(($home_x - $bod->{x})**2 + ($home_y - $bod->{y})**2));
     $bod->{sdist} = sprintf("%.2f", sqrt(($home_x - $stars->{$bod->{star_id}}->{x})**2 +
@@ -50,34 +56,39 @@ GetOptions(
     }
     if ($bod->{type} eq "asteroid") {
       $bod->{type} = "A";
-      $bod->{score} = score_rock($bod);
+      $bod->{bscore} = score_rock($bod);
     }
     elsif ($bod->{type} eq "gas giant") {
       $bod->{type} = "G";
-      $bod->{score} = score_gas($bod);
+      $bod->{bscore} = score_gas($bod);
     }
     elsif ($bod->{type} eq "habitable planet") {
       $bod->{type} = "H";
-      $bod->{score} = score_planet($bod);
+      $bod->{bscore} = score_planet($bod);
     }
     else {
-      $bod->{score} = 0;  #Space station or something else?
+      $bod->{type} = "U";
+      $bod->{bscore} = 0;  #Space station or something else?
     }
+    score_system(\%sys, $bod);
+  }
+  for my $key (keys %sys) {
+    $sys{"$key"}->{sscore} = join(":", $sys{"$key"}->{G}, $sys{"$key"}->{H}, $sys{"$key"}->{A});
   }
 
 
   printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-         "Name", "Sname", "O", "Dist", "SD", "X", "Y", "S", "Type",
-         "Img","Size", "Total", "Mineral", "Amt";
+         "Name", "Sname", "BS", "SS", "O", "Dist", "SD", "X", "Y", "Type",
+         "Img","Size", "Own", "Total", "Mineral", "Amt";
   for $bod (sort byscore @$bodies) {
     next if ($bod->{type} eq "A" and $opt_a == 0);
     next if ($bod->{type} eq "G" and $opt_g == 0);
     next if ($bod->{type} eq "H" and $opt_h == 0);
   
-    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
-           $bod->{name}, $bod->{star_name}, $bod->{orbit}, $bod->{dist}, 
-           $bod->{sdist}, $bod->{x}, $bod->{y}, $bod->{score}, $bod->{type},
-                  $bod->{image}, $bod->{size}, $bod->{ore_total};
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+           $bod->{name}, $bod->{star_name}, $bod->{bscore}, $sys{"$bod->{star_name}"}->{sscore},
+           $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y}, $bod->{type},
+           $bod->{image}, $bod->{size}, $bod->{empire}->{name}, $bod->{ore_total};
     for my $ore (sort keys %{$bod->{ore}}) {
       if ($bod->{ore}->{$ore} > 1) {
         print ",$ore,", $bod->{ore}->{$ore};
@@ -86,6 +97,49 @@ GetOptions(
     print "\n";
   }
 exit;
+
+# Highly Arbritrary system for scoring a star system based on what is in it.
+sub score_system {
+  my ($sys, $bod) = @_;
+
+  unless (defined($sys->{"$bod->{star_name}"}) ) {
+    $sys->{"$bod->{star_name}"}->{sscore} = "";
+    $sys->{"$bod->{star_name}"}->{A} = 0;
+    $sys->{"$bod->{star_name}"}->{G} = 0;
+    $sys->{"$bod->{star_name}"}->{H} = 0;
+  }
+  if ($bod->{type} eq "H") {
+    if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
+         ($bod->{size} >= 55)) {
+      $sys->{"$bod->{star_name}"}->{H} += 1;
+      
+    }
+    elsif ( ($bod->{orbit} == 3) and
+         ($bod->{size} >= 50)) {
+      $sys->{"$bod->{star_name}"}->{H} += 1;
+    }
+    elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
+         ($bod->{size} >= 50)) {
+      $sys->{"$bod->{star_name}"}->{H} += 1;
+    }
+  }
+  elsif ($bod->{type} eq "G") {
+    if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
+         ($bod->{size} >= 110)) {
+      $sys->{"$bod->{star_name}"}->{G} += 1;
+    }
+    elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
+         ($bod->{size} >=  99)) {
+      $sys->{"$bod->{star_name}"}->{G} += 1;
+    }
+  }
+  elsif ($bod->{type} eq "A") {
+    my $ascore = score_atype($bod->{image});
+    if ( $ascore > 3) {
+      $sys->{"$bod->{star_name}"}->{A} += 1;
+    }
+  }
+}
 
 sub score_rock {
   my ($bod) = @_;
@@ -97,28 +151,36 @@ sub score_rock {
   elsif ($bod->{dist} < 31) { $score += 10; }
   elsif ($bod->{dist} < 51) { $score += 5; }
 
-  if ($bod->{image} eq "a1") { $score += 20; }
-  elsif ($bod->{image} eq "a2" ) { $score += 20; }
-  elsif ($bod->{image} eq "a3" ) { $score += 20; }
-  elsif ($bod->{image} eq "a4" ) { $score += 20; }
-  elsif ($bod->{image} eq "a5" ) { $score += 15; }
-  elsif ($bod->{image} eq "a6" ) { $score -= 10; }
-  elsif ($bod->{image} eq "a7" ) { $score +=  0; }
-  elsif ($bod->{image} eq "a8" ) { $score +=  0; }
-  elsif ($bod->{image} eq "a9" ) { $score -=  5; }
-  elsif ($bod->{image} eq "a10" ) { $score +=  5; }
-  elsif ($bod->{image} eq "a11" ) { $score += 15; }
-  elsif ($bod->{image} eq "a12" ) { $score += 30; }
-  elsif ($bod->{image} eq "a13" ) { $score += 15; }
-  elsif ($bod->{image} eq "a14" ) { $score += 10; }
-  elsif ($bod->{image} eq "a15" ) { $score +=  5; }
-  elsif ($bod->{image} eq "a16" ) { $score +=  5; }
-  elsif ($bod->{image} eq "a17" ) { $score -= 15; }
-  elsif ($bod->{image} eq "a18" ) { $score += 10; }
-  elsif ($bod->{image} eq "a19" ) { $score += 10; }
-  elsif ($bod->{image} eq "a20" ) { $score +=  0; }
+  $score += score_atype($bod->{image}) * 5;
 
   return $score;
+}
+
+sub score_atype {
+  my ($atype) = @_;
+
+  if    ($atype eq "a1" )  { return  4; }
+  elsif ($atype eq "a2" )  { return  4; }
+  elsif ($atype eq "a3" )  { return  4; }
+  elsif ($atype eq "a4" )  { return  4; }
+  elsif ($atype eq "a5" )  { return  3; }
+  elsif ($atype eq "a6" )  { return -2; }
+  elsif ($atype eq "a7" )  { return  0; }
+  elsif ($atype eq "a8" )  { return  0; }
+  elsif ($atype eq "a9" )  { return -1; }
+  elsif ($atype eq "a10" ) { return  1; }
+  elsif ($atype eq "a11" ) { return  3; }
+  elsif ($atype eq "a12" ) { return  6; }
+  elsif ($atype eq "a13" ) { return  3; }
+  elsif ($atype eq "a14" ) { return  2; }
+  elsif ($atype eq "a15" ) { return  1; }
+  elsif ($atype eq "a16" ) { return  1; }
+  elsif ($atype eq "a17" ) { return -3; }
+  elsif ($atype eq "a18" ) { return  2; }
+  elsif ($atype eq "a19" ) { return  2; }
+  elsif ($atype eq "a20" ) { return  0; }
+
+  return 0;
 }
 
 sub score_planet {
@@ -175,7 +237,7 @@ sub score_gas {
 }
 
 sub byscore {
-   $b->{score} <=> $a->{score} ||
+   $b->{bscore} <=> $a->{bscore} ||
    $a->{dist} <=> $b->{dist} ||
    $a->{name} cmp $b->{name};
 }
@@ -208,6 +270,7 @@ sub usage {
 Usage: $0 [options]
 
 This program takes your supplied probe file and spits out information on the bodies in question.
+Probe file generation by probe_yaml.pl and merge_probe.pl
 
 Options:
   --help      - Prints this out
@@ -217,7 +280,7 @@ Options:
   --asteroid  - If looking at asteroid stats
   --gas       - If looking at gas giant stats
   --habitable - If looking at habitable stats
-
+  --systems   - If looking at a whole system.  
 END
  exit 1;
 }

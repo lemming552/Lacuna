@@ -123,7 +123,8 @@ sub check_exist {
     if (defined($old->{"$pname"}) and
         defined($old->{"$pname"}->{level_stats}->{"$bname"}[30]) ) {
        if ( cmp_hash($stat, $old->{"$pname"}->{level_stats}->{"$bname"}[30]) ) {
-         return (1, $old->{"$pname"}->{level_stats}->{"$bname"});
+         my @old_info = @{$old->{"$pname"}->{level_stats}->{"$bname"}};
+         return (1, \@old_info);
        }
     }
   }
