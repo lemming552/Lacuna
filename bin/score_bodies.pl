@@ -13,6 +13,16 @@ use YAML::XS;
 use Data::Dumper;
 use utf8;
 
+# Constants used for what is a decent sized planet
+use constant {
+  MIN_H1 => 55,  # Orbits 1 and 7
+  MIN_H3 => 50,  # Orbit  3
+  MIN_H5 => 50,  # Orbit  other
+  MIN_G1 => 95,  # Orbits 1 and 7
+  MIN_G5 => 95,  # Orbit other
+  MIN_A  =>  1,  # Asteroid score
+};
+
 my $home_x = 0;
 my $home_y = 0;
 my $probe_file = "data/probe_data_cmb.yml";
@@ -110,32 +120,32 @@ sub score_system {
   }
   if ($bod->{type} eq "H") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
-         ($bod->{size} >= 55)) {
+         ($bod->{size} >= MIN_H1)) {
       $sys->{"$bod->{star_name}"}->{H} += 1;
       
     }
     elsif ( ($bod->{orbit} == 3) and
-         ($bod->{size} >= 50)) {
+         ($bod->{size} >= MIN_H3)) {
       $sys->{"$bod->{star_name}"}->{H} += 1;
     }
     elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
-         ($bod->{size} >= 50)) {
+         ($bod->{size} >= MIN_H5)) {
       $sys->{"$bod->{star_name}"}->{H} += 1;
     }
   }
   elsif ($bod->{type} eq "G") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
-         ($bod->{size} >= 110)) {
+         ($bod->{size} >= MIN_G1)) {
       $sys->{"$bod->{star_name}"}->{G} += 1;
     }
     elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
-         ($bod->{size} >=  99)) {
+         ($bod->{size} >=  MIN_G5)) {
       $sys->{"$bod->{star_name}"}->{G} += 1;
     }
   }
   elsif ($bod->{type} eq "A") {
     my $ascore = score_atype($bod->{image});
-    if ( $ascore > 3) {
+    if ( $ascore > MIN_A) {
       $sys->{"$bod->{star_name}"}->{A} += 1;
     }
   }
