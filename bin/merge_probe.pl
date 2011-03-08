@@ -155,8 +155,10 @@ Usage: $0 [options]
 This program takes all data from two probe files and merges them.
 
 Options:
+
   --help                 - Prints this out
-  --output <file>        - Output file, default: data/probe_data_raw.yml
+  --import <file>        - File to import, default: data/probe_data_raw.yml
+  --merge  <file>        - Main file to merge into, default: data/probe_data_cmb.yml
 
 END
  exit 1;

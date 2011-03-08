@@ -2,25 +2,26 @@
 #
 use strict;
 use warnings;
-use Getopt::Long qw( GetOptions );
-use List::Util   qw( first );
-use Data::Dumper;
-use YAML;
-use YAML::Dumper;
-
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Games::Lacuna::Client ();
+use Games::Lacuna::Client;
+use Getopt::Long qw(GetOptions);
+use List::Util   qw( first );
+use Date::Parse;
+use Date::Format;
+use YAML::XS;
+use utf8;
 
-  my $planet;
+  my $planet_name;
   my $help;
   my $datafile = "data/data_oracle.yml";
+  my $probe_file = "data/probe_oracle.yml";
   my $starfile = "data/stars.csv";
   my $maxdist = 50;
   my $config  = "lacuna.yml";
 
   GetOptions(
-    'planet=s'   => \$planet,
+    'planet=s'   => \$planet_name,
     'help|h'     => \$help,
     'stars=s'    => \$starfile,
     'data=s'     => \$datafile,
@@ -28,24 +29,31 @@ use Games::Lacuna::Client ();
   );
 
   usage() if $help;
-  usage() if !$planet;
+  usage() if !$planet_name;
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $config,
     # debug    => 1,
   );
 
-  my $datadump = YAML::Dumper->new;
-  $datadump->indent_width(4);
-  open(OUTPUT, ">", "$datafile") || die "Could not open $datafile";
+  my $pfh;
+  open($pfh, ">", "$probe_file") || die "Could not open $probe_file";
+  my $ofh;
+  open($ofh, ">", "$datafile") || die "Could not open $datafile";
 
-  my $empire = $glc->empire->get_status->{empire};
+  my $data  = $glc->empire->view_species_stats();
+  my $ename = $data->{status}->{empire}->{name};
+  my $ststr = $data->{status}->{server}->{time};
+  my $stime   = str2time( map { s!^(\d+)\s+(\d+)\s+!$2/$1/!; $_ } $ststr);
+  my $ttime   = ctime($stime);
+  print "$ttime\n";
 
 # reverse hash, to key by name instead of id
-  my %planets = map { $empire->{planets}{$_}, $_ } keys %{ $empire->{planets} };
+  my %planets = map { $data->{status}->{empire}->{planets}{$_}, $_ }
+                  keys %{ $data->{status}->{empire}->{planets} };
 
 # Load planet data
-  my $body   = $glc->body( id => $planets{$planet} );
+  my $body   = $glc->body( id => $planets{$planet_name} );
 
   my $result = $body->get_buildings;
 
@@ -66,6 +74,7 @@ use Games::Lacuna::Client ();
   my $stars = load_stars($starfile, $maxdist, $x, $y);
 
   my $ok;
+  my @bodies;
   foreach my $star (@$stars) {
     print "Looking at $star->{id} ... ";
     my $star_ok = eval {
@@ -74,6 +83,19 @@ use Games::Lacuna::Client ();
     };
     if ($star_ok) {
       print "  Retrieved.\n";
+      for my $bod (@{$star->{info}->{bodies}}) {
+        $bod->{observatory} = {
+          empire => $ename,
+          oid    => $oracle_id,
+          pid    => $planets{$planet_name},
+          pname  => $planet_name,
+          stime  => $stime,
+          ststr  => $ststr,
+          lastd  => 0,  # Initialize last Excavator time
+          moved  => [ "nobody" ],
+        };
+      }
+      push @bodies, @{$star->{info}->{bodies}};
     }
     else {
       $star->{info} = "Out of Range";
@@ -86,8 +108,11 @@ use Games::Lacuna::Client ();
     }
   }
 
-  print OUTPUT $datadump->dump($stars);
-  close(OUTPUT);
+  YAML::Any::DumpFile($pfh, \@bodies);
+  close($pfh);
+  YAML::Any::DumpFile($ofh, $stars);
+  close($ofh);
+
   print "$glc->{total_calls} api calls made.\n";
   print "You have made $glc->{rpc_count} calls today\n";
 exit; 

@@ -24,7 +24,7 @@ GetOptions(
   'help' => \$help,
 );
   
-  my $client = Games::Lacuna::Client->new(
+  my $glc = Games::Lacuna::Client->new(
     cfg_file => $cfg_file,
     # debug    => 1,
   );
@@ -34,7 +34,7 @@ GetOptions(
   my $fh;
   open($fh, ">", "$probe_file") || die "Could not open $probe_file";
 
-  my $data = $client->empire->view_species_stats();
+  my $data = $glc->empire->view_species_stats();
 
 # Get planets
   my $planets = $data->{status}->{empire}->{planets};
@@ -47,7 +47,7 @@ GetOptions(
 # Get obervatories;
   my @observatories;
   for my $pid (keys %$planets) {
-    my $buildings = $client->body(id => $pid)->get_buildings()->{buildings};
+    my $buildings = $glc->body(id => $pid)->get_buildings()->{buildings};
     push @observatories, grep { $buildings->{$_}->{url} eq '/observatory' } keys %$buildings;
   }
 
@@ -55,11 +55,11 @@ GetOptions(
   my @stars;
   my @star_bit;
   for my $obs_id (@observatories) {
-    my $obs_view  = $client->building( id => $obs_id, type => 'Observatory' )->view();
+    my $obs_view  = $glc->building( id => $obs_id, type => 'Observatory' )->view();
     my $pages = 1;
     my $num_probed = 0;
     do {
-      my $obs_probe = $client->building( id => $obs_id, type => 'Observatory' )->get_probed_stars($pages++);
+      my $obs_probe = $glc->building( id => $obs_id, type => 'Observatory' )->get_probed_stars($pages++);
       $num_probed = $obs_probe->{star_count};
       @star_bit = @{$obs_probe->{stars}};
       if (@star_bit) {
@@ -112,8 +112,8 @@ GetOptions(
   YAML::Any::DumpFile($fh, \@bodies);
   close($fh);
 
-  print "$client->{total_calls} api calls made.\n";
-  print "You have made $client->{rpc_count} calls today\n";
+  print "$glc->{total_calls} api calls made.\n";
+  print "You have made $glc->{rpc_count} calls today\n";
 exit;
 
 sub usage {
