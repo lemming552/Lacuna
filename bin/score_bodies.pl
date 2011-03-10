@@ -16,8 +16,8 @@ use utf8;
 # Constants used for what is a decent sized planet
 use constant {
   MIN_H1 => 55,  # Orbits 1 and 7
-  MIN_H3 => 50,  # Orbit  3
-  MIN_H5 => 50,  # Orbit  other
+  MIN_H3 => 48,  # Orbit  3
+  MIN_H5 => 48,  # Orbit  other
   MIN_G1 => 95,  # Orbits 1 and 7
   MIN_G5 => 95,  # Orbit other
   MIN_A  =>  1,  # Asteroid score
@@ -95,7 +95,7 @@ GetOptions(
     next if ($bod->{type} eq "G" and $opt_g == 0);
     next if ($bod->{type} eq "H" and $opt_h == 0);
   
-    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
            $bod->{name}, $bod->{star_name}, $bod->{bscore}, $sys{"$bod->{star_name}"}->{sscore},
            $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y}, $bod->{type},
            $bod->{image}, $bod->{size}, $bod->{empire}->{name}, $bod->{ore_total};
