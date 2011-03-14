@@ -15,11 +15,11 @@ use utf8;
 
 # Constants used for what is a decent sized planet
 use constant {
-  MIN_H1 => 55,  # Orbits 1 and 7
-  MIN_H3 => 48,  # Orbit  3
-  MIN_H5 => 48,  # Orbit  other
-  MIN_G1 => 95,  # Orbits 1 and 7
-  MIN_G5 => 95,  # Orbit other
+  MIN_H1 => 30,  # Orbits 1 and 7
+  MIN_H3 => 30,  # Orbit  3
+  MIN_H5 => 30,  # Orbit  other
+  MIN_G1 => 60,  # Orbits 1 and 7
+  MIN_G5 => 60,  # Orbit other
   MIN_A  =>  1,  # Asteroid score
 };
 
@@ -197,7 +197,7 @@ sub score_planet {
   my ($bod) = @_;
   
   my $score = 0;
-  if ($bod->{size} == 60 or ($bod->{size} == 55 && $bod->{orbit} == 3)) {
+  if ($bod->{size} >= 60 or ($bod->{size} >= 55 && $bod->{orbit} == 3)) {
     $score += 50;
   }
   else { $score += ($bod->{size} - 50 ) * 2; }
@@ -218,7 +218,7 @@ sub score_gas {
   my ($bod) = @_;
 
   my $score = 0;
-  if ($bod->{size} == 121) {
+  if ($bod->{size} >= 121) {
     $score += 100;
   }
   elsif ($bod->{size} > 116) {
@@ -280,6 +280,7 @@ sub usage {
 Usage: $0 [options]
 
 This program takes your supplied probe file and spits out information on the bodies in question.
+Score is based totally on subjective opinion and what the author was looking for at the time.
 Probe file generation by probe_yaml.pl and merge_probe.pl
 
 Options:

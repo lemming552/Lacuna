@@ -61,6 +61,7 @@ use utf8;
   my %new_bld;
   for my $bld_id (keys %$buildings) {
     next if (defined($new_bld{"$buildings->{$bld_id}->{name}"}));
+    my $ok = 1;
     my $url = $buildings->{$bld_id}->{url};
     if ( grep { $url eq $_ } @skip_url ) {
       print "Skipping $buildings->{$bld_id}->{name}\n";
@@ -71,6 +72,7 @@ use utf8;
 
     my $bldpnt = $glc->building( id => $bld_id, type => $type);
     print "Checking $buildings->{$bld_id}->{name} : ";
+    print "RPC: $glc->{rpc_count}, ";
     my $end_lvl = 30;
     my $exist_info;
     my $exists;
@@ -90,16 +92,29 @@ use utf8;
       print " Generating New data\n";
       my @stats;
       for my $lvl (1..$end_lvl) {
-# Wrap with an eval to handle out of RPC problems
-# Possibly stop when we get to less than 1000 RPC available
-        my $stat = $bldpnt->get_stats_for_level($lvl)->{building};
-        push @stats, $stat;
+        my $stat;
+        $ok = eval {
+          $stat = $bldpnt->get_stats_for_level($lvl)->{building};
+          return 1;
+        };
+        if ($ok) {
+          push @stats, $stat;
+        }
+        else {
+          my $e = $@;
+          print "Error on get stats: $@\n";
+          print "Partial info with $buildings->{$bld_id}->{name}; Only thru level:",$lvl-1,"\n";
+        }
       }
       if ($end_lvl == 30) {
 # Add Level 31 info that was determined earlier.
         push @stats, $exist_info;
       }
       $new_bld{"$buildings->{$bld_id}->{name}"} = \@stats;
+    }
+    unless ($ok) {
+      print "Aborting run...\n";
+      last;
     }
   }
   $out_data->{"$planet_name"}->{level_stats} = \%new_bld;
@@ -110,6 +125,7 @@ use utf8;
   close($fh);
   print "$glc->{rpc_count} RPC\n";
 exit;
+
 
 sub check_exist {
   my ($old, $bld_pnt, $planet_name) = @_;
@@ -124,12 +140,55 @@ sub check_exist {
         defined($old->{"$pname"}->{level_stats}->{"$bname"}[30]) ) {
        if ( cmp_hash($stat, $old->{"$pname"}->{level_stats}->{"$bname"}[30]) ) {
          my @old_info = @{$old->{"$pname"}->{level_stats}->{"$bname"}};
-         return (1, \@old_info);
+         my $new_ref = duplicate_info(\@old_info);
+         return (1, $new_ref);
        }
     }
   }
 # Did not find existing, so feed back level 31
   return 0, $stat;
+}
+
+sub duplicate_info {
+  my ($big_ref) = @_;
+  
+  my @new_stats;
+  for my $elem (@{$big_ref}) {
+    my %new_elem;
+    for my $key (keys %{$elem}) {
+      if ($key eq "upgrade") {
+        $new_elem{upgrade} =  {
+          cost => {
+              energy => $elem->{upgrade}->{cost}->{energy},
+              food   => $elem->{upgrade}->{cost}->{food},
+              ore    => $elem->{upgrade}->{cost}->{ore},
+              time   => $elem->{upgrade}->{cost}->{time},
+              waste  => $elem->{upgrade}->{cost}->{waste},
+              water  => $elem->{upgrade}->{cost}->{water},
+          },
+          image => $elem->{upgrade}->{image},
+          production => {
+            energy_capacity => $elem->{upgrade}->{production}->{energy_capacity},
+            energy_hour     => $elem->{upgrade}->{production}->{energy_hour},
+            food_capacity   => $elem->{upgrade}->{production}->{food_capacity},
+            food_hour       => $elem->{upgrade}->{production}->{food_hour},
+            happiness_hour  => $elem->{upgrade}->{production}->{happiness_hour},
+            ore_capacity    => $elem->{upgrade}->{production}->{ore_capacity},
+            ore_hour        => $elem->{upgrade}->{production}->{ore_hour},
+            waste_capacity  => $elem->{upgrade}->{production}->{waste_capacity},
+            waste_hour      => $elem->{upgrade}->{production}->{waste_hour},
+            water_capacity  => $elem->{upgrade}->{production}->{water_capacity},
+            water_hour      => $elem->{upgrade}->{production}->{water_hour},
+          }
+        }
+      }
+      else {
+        $new_elem{"$key"} = $elem->{"$key"};
+      }
+    }
+    push @new_stats, \%new_elem;
+  }
+  return \@new_stats;
 }
 
 sub cmp_hash {

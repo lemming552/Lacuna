@@ -8,28 +8,35 @@ use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 use Data::Dumper;
+use utf8;
 
-  my $ai_file = "data/ai_colonies.csv";
+#  my $loc_file = "data/location.yml"; Not implemented yet
   my $home_x = 0;
   my $home_y = 0;
+  my $max_dist = 7500;
+  my $ai_file  = "data/ai_colonies.csv";
   my $diab = 0;
+  my $sab  = 0;
   my $trel = 0;
 
 GetOptions(
-  'x=i' => \$home_x,
-  'y=i' => \$home_y,
-  'p=s' => \$ai_file,
-  'diab' => \$diab,
-  'trel' => \$trel,
+  'x=i'        => \$home_x,
+  'y=i'        => \$home_y,
+  'p=s'        => \$ai_file,
+  'max_dist=i' => \$max_dist,
+  'diab'       => \$diab,
+  'sab'        => \$sab,
+  'trel'       => \$trel,
 );
   
-  if ($diab + $trel == 0) { $diab = $trel = 1; }
+  if ($diab + $sab + $trel == 0) { $diab = $sab = $trel = 1; }
 
   my $fh;
   open($fh, "$ai_file") or die;
 
   <$fh>;
   my @ais;
+  my $max_name = 0;
   while(<$fh>) {
     chomp;
     s/"//g;
@@ -44,15 +51,20 @@ GetOptions(
       };
     $dref->{status} = '' unless defined($dref->{status});
     next if ($diab == 0 && $dref->{race} eq "Diablotin");
+    next if ($sab == 0 && $dref->{race} =~ /Demesne/);
     next if ($trel == 0 && $dref->{race} =~ /Trelvestian/);
      
     $dref->{dist} = sprintf("%.2f", sqrt(($home_x - $dref->{x})**2 + ($home_y - $dref->{y})**2));
-    push @ais, $dref;
+    if ($dref->{dist} <= $max_dist) {
+      push @ais, $dref;
+      $max_name = length($dref->{name}) if (length($dref->{name}) > $max_name);
+    }
   }
   close($fh);
-  printf "%22s %6s %6s %7s %15s %s\n", "Name", "x", "y", "Dist", "Race", "Status";
+  printf "%${max_name}s %6s %6s %7s %15s %s\n", "Name", "x", "y", "Dist", "Race", "Status";
   for my $ai (sort bydist @ais) {
-    printf "%22s %6d %6d %7.2f %15s %s\n", $ai->{name}, $ai->{x}, $ai->{y},
+    $ai->{race} = "Saben" if ($ai->{race} =~ /Demesne/);
+    printf "%${max_name}s %6d %6d %7.2f %-15s %s\n", $ai->{name}, $ai->{x}, $ai->{y},
                                            $ai->{dist}, substr($ai->{race},0,15), $ai->{status};
   }
 
