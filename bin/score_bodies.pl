@@ -15,11 +15,11 @@ use utf8;
 
 # Constants used for what is a decent sized planet
 use constant {
-  MIN_H1 => 30,  # Orbits 1 and 7
-  MIN_H3 => 30,  # Orbit  3
-  MIN_H5 => 30,  # Orbit  other
-  MIN_G1 => 60,  # Orbits 1 and 7
-  MIN_G5 => 60,  # Orbit other
+  MIN_H1 => 55,  # Orbits 1 and 7
+  MIN_H3 => 50,  # Orbit  3
+  MIN_H5 => 55,  # Orbit  other
+  MIN_G1 => 99,  # Orbits 1 and 7
+  MIN_G5 => 90,  # Orbit other
   MIN_A  =>  1,  # Asteroid score
 };
 
@@ -87,18 +87,21 @@ GetOptions(
   }
 
 
-  printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-         "Name", "Sname", "BS", "SS", "O", "Dist", "SD", "X", "Y", "Type",
+  printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+         "Name", "Sname", "BS", "SS", "T", "YS", "O", "Dist", "SD", "X", "Y", "Type",
          "Img","Size", "Own", "Total", "Mineral", "Amt";
   for $bod (sort byscore @$bodies) {
     next if ($bod->{type} eq "A" and $opt_a == 0);
     next if ($bod->{type} eq "G" and $opt_g == 0);
     next if ($bod->{type} eq "H" and $opt_h == 0);
   
-    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
-           $bod->{name}, $bod->{star_name}, $bod->{bscore}, $sys{"$bod->{star_name}"}->{sscore},
-           $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y}, $bod->{type},
-           $bod->{image}, $bod->{size}, $bod->{empire}->{name}, $bod->{ore_total};
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+           $bod->{name}, $bod->{star_name}, $bod->{bscore},
+           $sys{"$bod->{star_name}"}->{sscore}, $sys{"$bod->{star_name}"}->{T},
+           $sys{"$bod->{star_name}"}->{YS},
+           $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y},
+           $bod->{type}, $bod->{image}, $bod->{size}, $bod->{empire}->{name},
+           $bod->{ore_total};
     for my $ore (sort keys %{$bod->{ore}}) {
       if ($bod->{ore}->{$ore} > 1) {
         print ",$ore,", $bod->{ore}->{$ore};
@@ -117,7 +120,10 @@ sub score_system {
     $sys->{"$bod->{star_name}"}->{A} = 0;
     $sys->{"$bod->{star_name}"}->{G} = 0;
     $sys->{"$bod->{star_name}"}->{H} = 0;
+    $sys->{"$bod->{star_name}"}->{T} = 0;
+    $sys->{"$bod->{star_name}"}->{YS} = 0;
   }
+  $sys{"$bod->{star_name}"}->{YS} += $bod->{bscore};
   if ($bod->{type} eq "H") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
          ($bod->{size} >= MIN_H1)) {
@@ -149,6 +155,17 @@ sub score_system {
       $sys->{"$bod->{star_name}"}->{A} += 1;
     }
   }
+  if ($bod->{type} eq "A" or ($bod->{orbit} == 1 or $bod->{orbit} >= 7)) {
+    if ($bod->{orbit} == 8) {
+      $sys->{"$bod->{star_name}"}->{T} += int($bod->{size}/2+0.5);
+    }
+    else {
+      $sys->{"$bod->{star_name}"}->{T} += int($bod->{size}/3+0.5);
+    }
+  }
+  else {
+    $sys->{"$bod->{star_name}"}->{T} += $bod->{size};
+  }
 }
 
 sub score_rock {
@@ -156,10 +173,10 @@ sub score_rock {
   
   my $score = 0;
 
-  if ($bod->{dist} < 11) { $score += 20; }
-  elsif ($bod->{dist} < 21) { $score += 15; }
-  elsif ($bod->{dist} < 31) { $score += 10; }
-  elsif ($bod->{dist} < 51) { $score += 5; }
+#  if ($bod->{dist} < 11) { $score += 20; }
+#  elsif ($bod->{dist} < 21) { $score += 15; }
+#  elsif ($bod->{dist} < 31) { $score += 10; }
+#  elsif ($bod->{dist} < 51) { $score += 5; }
 
   $score += score_atype($bod->{image}) * 5;
 
@@ -202,10 +219,10 @@ sub score_planet {
   }
   else { $score += ($bod->{size} - 50 ) * 2; }
 
-  if ($bod->{dist} < 11) { $score += 20; }
-  elsif ($bod->{dist} < 21) { $score += 15; }
-  elsif ($bod->{dist} < 31) { $score += 10; }
-  elsif ($bod->{dist} < 51) { $score += 5; }
+#  if ($bod->{dist} < 11) { $score += 20; }
+#  elsif ($bod->{dist} < 21) { $score += 15; }
+#  elsif ($bod->{dist} < 31) { $score += 10; }
+#  elsif ($bod->{dist} < 51) { $score += 5; }
 
   if ($bod->{water} > 9000) { $score += 15; }
   elsif ($bod->{water} > 7000) { $score += 10; }
@@ -231,18 +248,18 @@ sub score_gas {
     $score += 5;
   }
 
-  if ($bod->{dist} < 11) {
-    $score += 20;
-  }
-  elsif ($bod->{dist} < 21) {
-    $score += 15;
-  }
-  elsif ($bod->{dist} < 31) {
-    $score += 10;
-  }
-  elsif ($bod->{dist} < 51) {
-    $score += 5;
-  }
+#  if ($bod->{dist} < 11) {
+#    $score += 20;
+#  }
+#  elsif ($bod->{dist} < 21) {
+#    $score += 15;
+#  }
+#  elsif ($bod->{dist} < 31) {
+#    $score += 10;
+#  }
+#  elsif ($bod->{dist} < 51) {
+#    $score += 5;
+#  }
   return $score;
 }
 
