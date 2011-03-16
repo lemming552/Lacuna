@@ -155,17 +155,17 @@ sub score_system {
       $sys->{"$bod->{star_name}"}->{A} += 1;
     }
   }
-  if ($bod->{type} eq "A" or ($bod->{orbit} == 1 or $bod->{orbit} >= 7)) {
-    if ($bod->{orbit} == 8) {
-      $sys->{"$bod->{star_name}"}->{T} += int($bod->{size}/2+0.5);
-    }
-    else {
-      $sys->{"$bod->{star_name}"}->{T} += int($bod->{size}/3+0.5);
-    }
-  }
-  else {
+#  if ($bod->{type} eq "A" or ($bod->{orbit} == 1 or $bod->{orbit} >= 7)) {
+#    if ($bod->{orbit} == 8) {
+#      $sys->{"$bod->{star_name}"}->{T} += int($bod->{size}/2+0.5);
+#    }
+#    else {
+#      $sys->{"$bod->{star_name}"}->{T} += int($bod->{size}/3+0.5);
+#    }
+#  }
+#  else {
     $sys->{"$bod->{star_name}"}->{T} += $bod->{size};
-  }
+#  }
 }
 
 sub score_rock {
