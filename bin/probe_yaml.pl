@@ -76,8 +76,9 @@ GetOptions(
         push @stars, @star_bit;
       }
     } until (@star_bit == 0);
-    printf "%-12s: %2d Level: %2d Probes: %2d of %2d\n", $obs_view->{status}->{body}->{name}, $obs_id, $obs_view->{building}->{level},
-                                                       $num_probed, $obs_view->{building}->{level} * 3;
+    printf "%-12s: %2d Level: %2d Probes: %2d of %2d\n", $obs_view->{status}->{body}->{name},
+            $obs_id, $obs_view->{building}->{level}, $num_probed, $obs_view->{building}->{level} * 3;
+    sleep 5;
   }
 
 # Gather planet data
@@ -89,7 +90,8 @@ GetOptions(
 # Check for duplicated probes
       if (defined($bod_id{$bod->{id}})) {
         $bod_id{$bod->{id}} = $bod_id{$bod->{id}}.",".$star->{observatory}->{oid};
-        printf "Probe dupe: %d : %s\n", $bod->{id}, $bod_id{$bod->{id}};
+        printf "Probe dupe: %s %d : %s %s\n", $bod->{star_name}, $bod->{id},
+                                              $bod_id{$bod->{id}}, $star->{observatory}->{pname};
       }
       else {
         $bod_id{$bod->{id}} = $star->{observatory}->{oid};

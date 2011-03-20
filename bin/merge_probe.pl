@@ -120,7 +120,24 @@ sub merge_probe {
       delete $orig->{water_stored};
     }
   }
+  if ($orig->{type} ne $data->{type}) {
+# We probably have a new space station to account for
+    $orig = copy_body($orig, $data);
+    printf "Changing type of %s to %s\n", $data->{name}, $data->{type};
+  }
   return $orig;
+}
+
+sub copy_body {
+  my($orig, $data) = @_;
+#Easier to swap info into new and return it.
+  if (defined($orig->{empire})) {
+    %{$data->{empire}} = %{$orig->{empire}};
+  }
+  if (defined($orig->{observatory})) {
+    %{$data->{observatory}} = %{$orig->{observatory}};
+  }
+  return $data;
 }
 
 sub mk_key {

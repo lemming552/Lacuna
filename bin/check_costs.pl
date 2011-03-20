@@ -2,7 +2,7 @@
 # Need to add provision for adjusting via Oversight, Water, Ore Refineries, etc...
 # Can then make zero adjustment versions, and hopefully not have to calculate
 # per planet
-# updating with old data isn't working right. Fix
+# If building has been taken out, put into Orphan area?
 use strict;
 use warnings;
 use FindBin;
@@ -82,11 +82,14 @@ use utf8;
     }
     else {
       ($exists, $exist_info) = check_exist($out_data, $bldpnt, $planet_name);
+      if ($exist_info == 0) {
+        last;
+      }
     }
 
     if ($exists) {
       print " Import Old data\n";
-      $new_bld{"$buildings->{$bld_id}->{name}"} = $exist_info;
+      @{$new_bld{"$buildings->{$bld_id}->{name}"}} = @{$exist_info};
     }
     else {
       print " Generating New data\n";
@@ -95,6 +98,7 @@ use utf8;
         my $stat;
         $ok = eval {
           $stat = $bldpnt->get_stats_for_level($lvl)->{building};
+          sleep 1; #So we don't overrun RPC rate
           return 1;
         };
         if ($ok) {
@@ -104,6 +108,15 @@ use utf8;
           my $e = $@;
           print "Error on get stats: $@\n";
           print "Partial info with $buildings->{$bld_id}->{name}; Only thru level:",$lvl-1,"\n";
+          if ($e->code eq '1010' and $e->text =~ /Slow down/) {
+            print "Hit rate limit, so sleeping, then retrying\n";
+            sleep 10;
+            redo;
+          }
+          else {
+            print "Aborting task\n";
+            last;
+          }
         }
       }
       if ($end_lvl == 30) {
@@ -130,7 +143,28 @@ exit;
 sub check_exist {
   my ($old, $bld_pnt, $planet_name) = @_;
 
-  my $stat = $bld_pnt->get_stats_for_level(31)->{building};
+  my $stat;
+  my $ok;
+  do {
+    $ok = eval {
+      $stat = $bld_pnt->get_stats_for_level(31)->{building};
+      sleep 1; #So we don't overrun RPC rate
+      return 1;
+    };
+    unless ($ok) {
+      my $e = $@;
+      print "Error on get stats: $@\n";
+      if ($e->code eq '1010' and $e->text =~ /Slow down/) {
+        print "Hit rate limit, so sleeping, then retrying\n";
+        sleep 10;
+      }
+      else {
+        print "Retrying task\n";
+#        return 0,0;
+      }
+    }
+  } until ($ok);
+
   my $bname = $stat->{name};
 # Check current planet for existing info at lvl 31
   my @planets = grep { $_ ne $planet_name and $_ ne "species" } keys %$old;

@@ -17,14 +17,14 @@ use utf8;
   my $cfg_file = "lacuna.yml";
   my $yard_file = "data/shipyards.yml";
   my $help    = 0;
-  my $ship_e;
+  my $stype;
   my $number = 0;
 
   GetOptions(
     'planet=s' => \$planet_name,
     'config=s' => \$cfg_file,
     'yards=s'  => \$yard_file,
-    'ship=s'   => \$ship_e,
+    'type=s'   => \$stype,
     'help'     => \$help,
     'number=i' => \$number,
   );
@@ -34,15 +34,15 @@ use utf8;
     # debug    => 1,
   );
 
-  usage() if $help or $planet_name eq "" or $ship_e eq "";
+  usage() if $help or $planet_name eq "" or $stype eq "";
 
 # Load urls of buildings that don't give useful stats.
   my @ship_types = ship_types();
 
-  my $ship_build = first { $_ =~ /$ship_e/ } @ship_types;
+  my $ship_build = first { $_ =~ /$stype/ } @ship_types;
 
   unless ($ship_build) {
-    print "$ship_e is an unknown type!\n";
+    print "$stype is an unknown type!\n";
     exit;
   }
   print "Will try to build $ship_build\n";
@@ -119,7 +119,7 @@ use utf8;
     }
   }
   else {
-    print "Can not build $ship_build : ",$buildable->{buildable}->{"$ship_build"}->{reason},"\n";
+    print "Can not build $ship_build : ", @{$buildable->{buildable}->{"$ship_build"}->{reason}},"\n";
   }
   print "$glc->{rpc_count} RPC\n";
 exit;
@@ -133,8 +133,9 @@ Options:
   --help              - Prints this out
   --config <cfg_file> - Config file, defaults to lacuna.yml
   --planet <planet>   - Planet Name you are building on required.
-  --yards <file>      - File with shipyard level & ID default data/shipyards.yml
-  --ships shiptype    - ship type you want to build, partial name fine
+  --yards  <file>     - File with shipyard level & ID default data/shipyards.yml
+  --type   shiptype   - ship type you want to build, partial name fine
+  --number number     - Number of ship you wish to produce
 
 END
  exit 1;
