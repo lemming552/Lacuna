@@ -8,14 +8,18 @@ use Getopt::Long qw(GetOptions);
 use YAML::Any ();
 use lib 'lib';
 
-  my $map_file = 'data/map.yml';
+  my $map_file = 'data/map_empire.yml';
   my $probefile = 'data/probe_data_cmb.yml';
   my $starfile = 'data/stars.csv';
-  my $private = 0; # If private, our colonies are green and alliance is purple
+  my $share = 0; # If share, we strip out color coding occupied planets
+  my $showstars = 0; # If show_stars, we put in non-probed stars
+
   GetOptions(
-    'c|map_file=s' => \$map_file,
-    'd|probefile=s' => \$probefile,
-    'p|private=i' => \$private,
+    'empire_file=s' => \$map_file,
+    'probefile=s' => \$probefile,
+    'starfile=s' => \$starfile,
+    'share' => \$share,
+    'showstars' => \$showstars,
   );
 
   my $config;
@@ -60,16 +64,18 @@ use lib 'lib';
   my ($map_xsize, $map_ysize) = ($max_x - $min_x + 1, $max_y - $min_y + 1);
   my ($xsize, $ysize) = ($map_xsize+$xborder, $map_ysize+$yborder);
 
-  my $img = Imager->new(xsize => $xsize+$xborder, ysize => $ysize);
-  my $black  = Imager::Color->new(0, 0, 0);
-  my $red    = Imager::Color->new(255, 0, 0);
-  my $yellow = Imager::Color->new(255, 255, 0);
-  my $green  = Imager::Color->new(0, 255, 0);
-  my $blue   = Imager::Color->new(0, 0, 255);
+  my $img = Imager->new(xsize => $xsize+$xborder, ysize => $ysize+$yborder);
+  my $black  = Imager::Color->new(  0,   0,   0);
+  my $blue   = Imager::Color->new(  0,   0, 255);
+  my $cyan   = Imager::Color->new(  0, 255, 255);
+  my $green  = Imager::Color->new(  0, 255,   0);
+  my $grey   = Imager::Color->new( 80,  80,  80);
+  my $magenta= Imager::Color->new(255,   0, 255);
+  my $purple = Imager::Color->new( 80,   0,  80);
+  my $red    = Imager::Color->new(255,   0,   0);
+  my $silver = Imager::Color->new(192, 192, 192);
+  my $yellow = Imager::Color->new(255, 255,   0);
   my $white  = Imager::Color->new(255, 255, 255);
-  my $grey   = Imager::Color->new(80, 80, 80);
-  my $magenta= Imager::Color->new(255, 0, 255);
-  my $purple = Imager::Color->new(80, 0, 80);
   $img->box(filled => 1, color => $black);
 
   $img->line(x1 => $map_xsize+1, x2 => $map_xsize+1, y1 => 1, y2 => $map_ysize+1, color => $white);
@@ -101,22 +107,24 @@ use lib 'lib';
     ],
   );
 
-#  for my $star_id (keys %{$stars}) {
-#    $img->setpixel(x => $stars->{"$star_id"}->{x} - $min_x,
-#                   y => $map_ysize-($stars->{"$star_id"}->{y} - $min_y),
-#                   color => $stars->{"$star_id"}->{color});
-#  }   
+  if ($showstars) {
+    for my $star_id (keys %{$stars}) {
+      $img->setpixel(x => $stars->{"$star_id"}->{x} - $min_x,
+                     y => $map_ysize-($stars->{"$star_id"}->{y} - $min_y),
+                     color => $stars->{"$star_id"}->{color});
+    }   
+  }
 
   my $color;
   for my $bod (@$bodies) {
-    if (defined($bod->{empire})) {
+    if (!$share and defined($bod->{empire})) {
       $color = $red;
     }
     elsif ($bod->{type} eq "asteroid") {
-      $color = $grey;
+      $color = $silver;
     }
     elsif ($bod->{type} eq "gas giant") {
-      $color = $purple;
+      $color = $cyan;
     }
     elsif ($bod->{type} eq "habitable planet") {
       $color = $green;

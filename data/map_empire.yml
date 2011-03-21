@@ -1,0 +1,115 @@
+---
+empire_id: 000
+min_x: -1500
+max_x: 1500
+min_y: -1500
+max_y: 1500
+allied_empires:
+- 000
+planets:
+ -  name: Best Planet
+    prime: 1
+    x: 0
+    y: 0
+ -  name: Nowhere
+    prime: 0
+    x: 552
+    y: 552
+search:
+ - orbit: 1
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 95
+     type:
+      - any
+ - orbit: 2
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 95
+     type:
+      - any
+ - orbit: 3
+   habitable planet:
+     size: 55
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 1
+     type:
+      - any
+ - orbit: 4
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 95
+     type:
+      - any
+ - orbit: 5
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 95
+     type:
+      - any
+ - orbit: 6
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 95
+     type:
+      - any
+ - orbit: 7
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - a18
+      - a19
+   gas giant:
+     size: 95
+     type:
+      - any
+ - orbit: 8
+   habitable planet:
+     size: 60
+     type:
+      - any
+   asteroid:
+     type:
+      - any
+   gas giant:
+     size: 95
+     type:
+      - any
