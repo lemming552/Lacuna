@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# Hacked from Steffen's code
 use strict;
 use warnings;
 use FindBin;
@@ -235,5 +236,3 @@ print join(":", @{$line1}),"\n";
  
 
 }
-#  die "print wrong format for csv\n" if ($fline ne '"body_id", "star_id", "orbit", "x", "y", "type", "last_excavated", "name", "empire_id", "last_checked", "water", "size"');
-# "body_id", "star_id", "orbit", "x", "y", "type", "last_excavated", "name", "empire_id", "last_checked", "water", "size"
