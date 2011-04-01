@@ -59,6 +59,7 @@ foreach my $name ( sort keys %planets ) {
     my $ppc_id = first {
             $buildings->{$_}->{name} eq 'Planetary Command Center'
     } keys %$buildings;
+    next unless $ppc_id; #Quick Space Station Kludge
     
     my $ppc   = $client->building( id => $ppc_id, type => 'PlanetaryCommand' );
     my $plans = $ppc->view_plans->{plans};
