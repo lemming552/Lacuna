@@ -12,10 +12,10 @@ use Getopt::Long qw(GetOptions);
 use YAML::Any ();
 use Text::CSV;
 
+  my $imgfile = "map_db.png";
   my $map_file = 'data/map_empire.yml';
   my $dbfile = 'data/stars.db';
   my $starfile = 'data/stars.csv';
-  my $maxchecked = 5000; # How big an area we'll check
   my $share = 0; # If share, we strip out color coding occupied planets
   my $showstars = 0; # If show_stars, we put in non-probed stars
   my $excavate = 0; # If excavate, special color for excavated bodies
@@ -27,7 +27,6 @@ use Text::CSV;
     'share' => \$share,
     'showstars' => \$showstars,
     'excavate' => \$excavate,
-    'maxchecked=i' => \$maxchecked,
   );
 
   my $config;
@@ -186,8 +185,8 @@ SQL
   printf "H:%5d, A:%5d, G:%5d, O:%5d, S:%5d, U:%5d, E: %5d\n",
           $hcount, $acount, $gcount, $ocount, $scount, $ucount, $ecount;
 
-  $img->write(file => "map_db.png")
-    or die q{Cannot save map_db.png, }, $img->errstr;
+  $img->write(file => "$imgfile")
+    or die q{Cannot save $imgfile, }, $img->errstr;
 
 
 exit;
@@ -215,44 +214,3 @@ sub get_stars {
   return \%star_hash;
 }
 
-sub get_data {
-  my ($pfile) = @_;
-
-  my $csv = Text::CSV->new( {binary => 0, allow_whitespace => 1} ) or
-       die "Cannot use CSV: ".Text::CSV->error_diag ();
-
-  my $fh;
-  open ( $fh, "<:encoding(utf8)", "$pfile") or die "$pfile: $!";
-
-  my @bod_array;
-  my $line1 = $csv->getline($fh);
-  die unless $line1;
-print join(":", @{$line1}),"\n";
-  if ($line1->[0] ne "body_id" and
-      $line1->[1] ne "star_id" and
-      $line1->[2] ne "orbit" and
-      $line1->[3] ne "x" and
-      $line1->[4] ne "y" and
-      $line1->[5] ne "type" and
-      $line1->[6] ne "last_excavated") {
-    die "Header is wrong!\n";
-  }
-  while ( my $row = $csv->getline($fh) ) {
-    my $bod = {
-      id             => $row->[0],
-      star_id        => $row->[1],
-      orbit          => $row->[2],
-      x              => $row->[3],
-      y              => $row->[4],
-      type           => $row->[5],
-      last_excavated => $row->[6],
-      name           => $row->[7],
-      empire_id      => $row->[8],
-    };
-    push @bod_array, $bod;
-  }
-
-  return \@bod_array;
- 
-
-}
