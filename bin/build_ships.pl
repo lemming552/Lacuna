@@ -19,6 +19,7 @@ use utf8;
   my $help    = 0;
   my $stype;
   my $number = 0;
+  my $reserve =0;
 
   GetOptions(
     'planet=s' => \$planet_name,
@@ -27,6 +28,7 @@ use utf8;
     'type=s'   => \$stype,
     'help'     => \$help,
     'number=i' => \$number,
+    'reserve=i' => \$reserve,
   );
   
   my $glc = Games::Lacuna::Client->new(
@@ -58,7 +60,7 @@ use utf8;
   my $yard_id = first { $_ } keys %{$yard_data->{"$planet_name"}};
   my $yard_level = $yard_data->{"$planet_name"}->{"$yard_id"}->{level};
 
-  print "$yard_id we hope with a level of ",$yard_level,"\n";
+  print "$planet_name: $yard_id we hope with a level of ",$yard_level,"\n";
   unless ($yard_level > 0 and $yard_data->{"$planet_name"}->{"$yard_id"}->{name} eq "Shipyard") {
     print "Yard data error! ",$yard_data->{"$planet_name"}->{"$yard_id"}->{name}," : ",$yard_level,"\n";
     exit;
@@ -73,7 +75,11 @@ use utf8;
 #  print YAML::XS::Dump($buildable); exit;
   print "Starting with ", $buildable->{status}->{empire}->{rpc_count},
         " of ",$buildable->{status}->{server}->{rpc_limit}, " RPC\n";
-  my $dockspace = $buildable->{docks_available};
+  my $dockspace = $buildable->{docks_available} - $reserve;
+
+  if ($buildable->{status}->{body}->{name} ne "$planet_name") {
+    die "Mismatch of name! $buildable->{status}->{body}->{name} ne $planet_name";
+  }
   
 
 # Can we build selected?
@@ -100,7 +106,7 @@ use utf8;
       }
       else {
         my $error = $@;
-        if ($error =~ /1009|1002/) {
+        if ($error =~ /1009|1002|1011/) {
           print $error, "\n";
           last;
         }
@@ -170,10 +176,14 @@ sub ship_types {
         short_range_colony_ship
         smuggler_ship
         snark
+        snark2
+        snark3
         spaceport_seeker
         space_station
         spy_pod
         spy_shuttle
+        surveyor
+        sweeper
         terraforming_platform_ship
       ),
     );

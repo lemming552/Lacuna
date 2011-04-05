@@ -154,11 +154,10 @@ my $cfg_file;
     if ( $ship ) {
       my $gcargo_each = $glyphs_result->{cargo_space_used_each};
       my $pcargo_each = $plans_result->{cargo_space_used_each};
-      my $cargo_req  = $gcargo_each * scalar @glyphs +
-                       $pcargo_each * scalar @plans;
+      my $cargo_req  = ($gcargo_each * scalar @glyphs) + ($pcargo_each * scalar @plans);
         
       if ( $ship->{hold_size} < $cargo_req ) {
-        warn sprintf "Specified ship cannot hold all plans and glyphs. Exiting\n";
+        warn sprintf "$ship->{name} has a hold of: $ship->{hold_size}. Attempting to ship $cargo_req\n";
         exit;
       }
         
@@ -177,7 +176,7 @@ my $cfg_file;
          type     => 'glyph',
          glyph_id => $_->{id},
        }
-    } @glyphs;
+    } sort by_type @glyphs;
 
   push @items, 
     map {
@@ -185,7 +184,7 @@ my $cfg_file;
             type    => 'plan',
             plan_id => $_->{id},
         }
-    } @plans;
+    } sort by_name @plans;
 
   my $popt = set_options($ship_id, $stay);
   my $return = "";
@@ -210,6 +209,14 @@ my $cfg_file;
   }
 
 exit;
+
+sub by_type {
+  $a->{type} cmp $b->{type}
+}
+
+sub by_name {
+  $a->{name} cmp $b->{name}
+}
 
 sub set_options {
   my ($ship_id, $stay) = @_;

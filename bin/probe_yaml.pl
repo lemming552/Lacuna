@@ -26,7 +26,7 @@ GetOptions(
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $cfg_file,
-    # debug    => 1,
+    debug    => 1,
   );
 
   usage() if $help;
@@ -76,7 +76,7 @@ GetOptions(
         push @stars, @star_bit;
       }
     } until (@star_bit == 0);
-    printf "%-12s: %2d Level: %2d Probes: %2d of %2d\n", $obs_view->{status}->{body}->{name},
+    printf "%-12s: %7d  Level: %2d, Probes: %2d of %2d\n", $obs_view->{status}->{body}->{name},
             $obs_id, $obs_view->{building}->{level}, $num_probed, $obs_view->{building}->{level} * 3;
     sleep 5;
   }

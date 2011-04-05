@@ -1,29 +1,33 @@
 #!/usr/bin/perl
-# Hacked from Steffen's code
+# Hacked from Steffen's code and then some of cxreg's stuffed in
 use strict;
 use warnings;
-use FindBin;
-use lib "$FindBin::Bin/../lib";
+
+use feature ':5.10';
+
+use DBI;
+use Data::Dumper;
 use Imager;
 use Getopt::Long qw(GetOptions);
 use YAML::Any ();
-use lib 'lib';
+use Text::CSV;
 
-  my $img_file = "map_yml.png";
   my $map_file = 'data/map_empire.yml';
-  my $probefile = 'data/probe_data_cmb.yml';
+  my $dbfile = 'data/stars.db';
   my $starfile = 'data/stars.csv';
+  my $maxchecked = 5000; # How big an area we'll check
   my $share = 0; # If share, we strip out color coding occupied planets
   my $showstars = 0; # If show_stars, we put in non-probed stars
   my $excavate = 0; # If excavate, special color for excavated bodies
 
   GetOptions(
     'empire_file=s' => \$map_file,
-    'probefile=s' => \$probefile,
-    'starfile=s' => \$starfile,
+    'database=s' => \$dbfile,
+    'starfile=s' => \$starfile, # We could get this out of database
     'share' => \$share,
     'showstars' => \$showstars,
     'excavate' => \$excavate,
+    'maxchecked=i' => \$maxchecked,
   );
 
   my $config;
@@ -42,13 +46,21 @@ use lib 'lib';
   }
   my %allied_empires = map {($_ => 1)} @allied_empires;
 
-  my $bodies;
-  if (-e $probefile) {
-    $bodies = YAML::Any::LoadFile($probefile);
-  }
-  else {
-    die "No probe file: $probefile\n";
-  }
+  my $db = DBI->connect("dbi:SQLite:$dbfile")
+    or die "Can't open SQLite db $dbfile: $DBI::errstr\n";
+  $db->{ReadOnly} = 1;
+  $db->{RaiseError} = 1;
+  $db->{PrintError} = 0;
+
+# die "fix SQL statement";
+my $sql = <<SQL;
+select body_id, o.name as o_name, o.x as x, o.y as y, o.type as type,
+       star_id, empire_id, s.x as s_x, s.y as s_y, s.color as color, last_excavated
+from orbitals o join stars s on o.star_id = s.id
+SQL
+
+  my $get = $db->prepare($sql);
+  $get->execute();
 
   my $stars;
   if (-e $starfile) {
@@ -70,6 +82,7 @@ use lib 'lib';
 
   my $img = Imager->new(xsize => $xsize+$xborder, ysize => $ysize+$yborder);
   my $black  = Imager::Color->new(  0,   0,   0);
+  my $dull   = Imager::Color->new( 40,  40,  40);
   my $blue   = Imager::Color->new(  0,   0, 255);
   my $cyan   = Imager::Color->new(  0, 255, 255);
   my $green  = Imager::Color->new(  0, 255,   0);
@@ -120,27 +133,48 @@ use lib 'lib';
   }
 
   my $color;
-  for my $bod (@$bodies) {
-    if ($excavate and defined($bod->{last_excavated}) and $bod->{last_excavated} ne '') {
-      $color = $blue;
-    }
-    elsif (!$share and defined($bod->{empire})) {
+  my $ecount = 0;
+  my $acount = 0;
+  my $hcount = 0;
+  my $gcount = 0;
+  my $ocount = 0;
+  my $ucount = 0;
+  my $scount = 0;
+  while (my $bod = $get->fetchrow_hashref) {
+    if (!defined($bod->{type})) {
       $color = $red;
+      $ocount++;
+    }
+    elsif ($excavate and (defined($bod->{last_excavated}) and $bod->{last_excavated} ne '')) {
+      $color = $blue;
+      $ecount++;
     }
     elsif ($bod->{type} eq "asteroid") {
       $color = $silver;
+      $acount++;
     }
     elsif ($bod->{type} eq "gas giant") {
       $color = $cyan;
+      $gcount++;
     }
     elsif ($bod->{type} eq "habitable planet") {
       $color = $green;
+      $hcount++;
     }
     elsif ($bod->{type} eq "space station") {
       $color = $blue;
+      $scount++;
+    }
+    elsif ($bod->{type} eq "empty") {
+      $color = $black;
     }
     else {
       $color = $magenta;
+      $ucount++;
+    }
+    if (!$share and defined($bod->{empire_id})) {
+      $color = $red;
+      $ocount++;
     }
     $img->setpixel(x => $bod->{x} - $min_x,
                    y => $map_ysize-($bod->{y} - $min_y),
@@ -149,9 +183,11 @@ use lib 'lib';
                    y => $map_ysize-($stars->{"$bod->{star_id}"}->{y} - $min_y),
                    color => $stars->{"$bod->{star_id}"}->{color});
   }
+  printf "H:%5d, A:%5d, G:%5d, O:%5d, S:%5d, U:%5d, E: %5d\n",
+          $hcount, $acount, $gcount, $ocount, $scount, $ucount, $ecount;
 
-  $img->write(file => "$img_file")
-    or die q{Cannot save $img_file, }, $img->errstr;
+  $img->write(file => "map_db.png")
+    or die q{Cannot save map_db.png, }, $img->errstr;
 
 
 exit;
@@ -177,4 +213,46 @@ sub get_stars {
     }
   }
   return \%star_hash;
+}
+
+sub get_data {
+  my ($pfile) = @_;
+
+  my $csv = Text::CSV->new( {binary => 0, allow_whitespace => 1} ) or
+       die "Cannot use CSV: ".Text::CSV->error_diag ();
+
+  my $fh;
+  open ( $fh, "<:encoding(utf8)", "$pfile") or die "$pfile: $!";
+
+  my @bod_array;
+  my $line1 = $csv->getline($fh);
+  die unless $line1;
+print join(":", @{$line1}),"\n";
+  if ($line1->[0] ne "body_id" and
+      $line1->[1] ne "star_id" and
+      $line1->[2] ne "orbit" and
+      $line1->[3] ne "x" and
+      $line1->[4] ne "y" and
+      $line1->[5] ne "type" and
+      $line1->[6] ne "last_excavated") {
+    die "Header is wrong!\n";
+  }
+  while ( my $row = $csv->getline($fh) ) {
+    my $bod = {
+      id             => $row->[0],
+      star_id        => $row->[1],
+      orbit          => $row->[2],
+      x              => $row->[3],
+      y              => $row->[4],
+      type           => $row->[5],
+      last_excavated => $row->[6],
+      name           => $row->[7],
+      empire_id      => $row->[8],
+    };
+    push @bod_array, $bod;
+  }
+
+  return \@bod_array;
+ 
+
 }
