@@ -41,6 +41,7 @@ foreach my $planet_id ( sort keys %$planets ) {
   my $result    = $planet->get_buildings;
   my $body      = $result->{status}->{body};
   my $buildings = $result->{buildings};
+  next if $body->{type} eq "space station";
 
   # Find the Development Ministry
   my $development_id = List::Util::first {
@@ -75,9 +76,13 @@ foreach my $planet_id ( sort keys %$planets ) {
 
     my $label    = ucfirst($type);
                 my $time; my $left;
-                if ($hour > 0) {
-      $time     = int( $capacity / $hour );
-      $left     = int( $storage  / $hour );
+                if ($hour == 0) {
+                  $time     = 0;
+                  $left     = 0;
+                }
+                elsif ($hour > 0) {
+                  $time     = int( $capacity / $hour );
+                  $left     = int( $storage  / $hour );
                 }
                 else {
                   $time = "000";
