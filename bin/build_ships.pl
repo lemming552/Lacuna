@@ -1,8 +1,4 @@
 #!/usr/bin/perl
-# Need to add provision for adjusting via Oversight, Water, Ore Refineries, etc...
-# Can then make zero adjustment versions, and hopefully not have to calculate
-# per planet
-# updating with old data isn't working right. Fix
 use strict;
 use warnings;
 use FindBin;
@@ -15,6 +11,7 @@ use utf8;
 
   my $planet_name = "";
   my $cfg_file = "lacuna.yml";
+# Create program for generating shipyard file.
   my $yard_file = "data/shipyards.yml";
   my $help    = 0;
   my $stype;
@@ -109,6 +106,17 @@ use utf8;
         if ($error =~ /1009|1002|1011/) {
           print $error, "\n";
           last;
+        }
+        elsif ($error =~ /1010/) {
+          print $error, " taking a minute off.\n";
+          sleep(60);
+          next;
+        }
+        elsif ($error =~ /1013/) {
+          print " Queue Full: Sleeping ",
+                  $bld_time," seconds. \n";
+          sleep($bld_time);
+          next;
         }
         else {
           print $error, "\n";

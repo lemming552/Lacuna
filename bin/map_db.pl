@@ -19,6 +19,7 @@ use Text::CSV;
   my $share = 0; # If share, we strip out color coding occupied planets
   my $showstars = 0; # If show_stars, we put in non-probed stars
   my $excavate = 0; # If excavate, special color for excavated bodies
+  my $blur = 0; # Spread colors a bit
 
   GetOptions(
     'empire_file=s' => \$map_file,
@@ -27,6 +28,7 @@ use Text::CSV;
     'share' => \$share,
     'showstars' => \$showstars,
     'excavate' => \$excavate,
+    'blur'     => \$blur,
   );
 
   my $config;
@@ -53,7 +55,7 @@ use Text::CSV;
 
 # die "fix SQL statement";
 my $sql = <<SQL;
-select body_id, o.name as o_name, o.x as x, o.y as y, o.type as type,
+select body_id, o.name as o_name, orbit, o.x as x, o.y as y, o.type as type,
        star_id, empire_id, s.x as s_x, s.y as s_y, s.color as color, last_excavated
 from orbitals o join stars s on o.star_id = s.id
 SQL
@@ -94,8 +96,10 @@ SQL
   my $white  = Imager::Color->new(255, 255, 255);
   $img->box(filled => 1, color => $black);
 
-  $img->line(x1 => $map_xsize+1, x2 => $map_xsize+1, y1 => 1, y2 => $map_ysize+1, color => $white);
-  $img->line(x1 => 1, x2 => $map_xsize+1, y1 => $map_ysize+1, y2 => $map_ysize+1, color => $white);
+  $img->line(x1 => $map_xsize+1, x2 => $map_xsize+1,
+             y1 => 1, y2 => $map_ysize+1, color => $white);
+  $img->line(x1 => 1, x2 => $map_xsize+1,
+             y1 => $map_ysize+1, y2 => $map_ysize+1, color => $white);
 
   use Imager::Fill;
   my $fill1 = Imager::Fill->new(solid=>$green);
@@ -112,8 +116,8 @@ SQL
   );
 
   $img->box(xmin => int($map_xsize/4.), xmax => int($map_xsize*3/4),
-          ymin => $map_ysize+10, ymax => $map_ysize+12,
-          color => $green, fill => $fill1);
+            ymin => $map_ysize+10, ymax => $map_ysize+12,
+            color => $green, fill => $fill1);
   $img->polygon(
     color => $green, fill => $fill1,
     points => [
@@ -130,6 +134,8 @@ SQL
                      color => $stars->{"$star_id"}->{color});
     }   
   }
+
+  my $offset = get_offset();
 
   my $color;
   my $ecount = 0;
@@ -178,6 +184,16 @@ SQL
     $img->setpixel(x => $bod->{x} - $min_x,
                    y => $map_ysize-($bod->{y} - $min_y),
                    color => $color);
+    if ($blur) {
+      for my $pnt (0..4) {
+        $img->setpixel(x => $bod->{x} - $min_x
+                            + $offset->[$bod->{orbit}]->[$pnt]->{x},
+                     y => $map_ysize - ($bod->{y} - $min_y)
+                            + $offset->[$bod->{orbit}]->[$pnt]->{y},
+                     color => $color);
+      }
+      
+    }
     $img->setpixel(x => $stars->{"$bod->{star_id}"}->{x} - $min_x,
                    y => $map_ysize-($stars->{"$bod->{star_id}"}->{y} - $min_y),
                    color => $stars->{"$bod->{star_id}"}->{color});
@@ -214,3 +230,54 @@ sub get_stars {
   return \%star_hash;
 }
 
+sub get_offset {
+  my $array = [
+    [ { x =>  0, y=>  0 },
+      { x =>  0, y=>  0 },
+      { x =>  0, y=>  0 },
+      { x =>  0, y=>  0 },
+      { x =>  0, y=>  0 }, ],
+    [ { x => -1, y=>  0 },
+      { x => -1, y=> -1 },
+      { x =>  0, y=> -1 },
+      { x =>  1, y=> -1 },
+      { x => -1, y=>  1 }, ],
+    [ { x => -1, y=>  0 },
+      { x =>  1, y=>  0 },
+      { x =>  1, y=> -1 },
+      { x =>  1, y=> -2 },
+      { x =>  0, y=> -1 }, ],
+    [ { x =>  0, y=> -1 },
+      { x =>  1, y=>  0 },
+      { x =>  1, y=>  1 },
+      { x =>  1, y=> -1 },
+      { x => -1, y=> -1 }, ],
+    [ { x =>  1, y=>  0 },
+      { x =>  0, y=>  1 },
+      { x =>  1, y=>  1 },
+      { x =>  2, y=>  1 },
+      { x =>  0, y=> -1 }, ],
+    [ { x =>  1, y=>  0 },
+      { x =>  0, y=>  1 },
+      { x => -1, y=>  1 },
+      { x =>  1, y=>  1 },
+      { x =>  1, y=> -1 }, ],
+    [ { x =>  1, y=>  0 },
+      { x => -1, y=>  0 },
+      { x => -1, y=>  1 },
+      { x => -1, y=>  2 },
+      { x =>  0, y=>  1 }, ],
+    [ { x =>  0, y=>  1 },
+      { x => -1, y=> -1 },
+      { x => -1, y=>  0 },
+      { x => -1, y=>  1 },
+      { x =>  1, y=>  1 }, ],
+    [ { x =>  0, y=>  1 },
+      { x =>  0, y=> -1 },
+      { x => -1, y=> -1 },
+      { x => -2, y=> -1 },
+      { x => -1, y=>  0 }, ],
+  ];
+
+  return $array;
+}

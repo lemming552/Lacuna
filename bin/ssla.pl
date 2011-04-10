@@ -60,13 +60,32 @@ use YAML::Dumper;
   print "Space Station Lab: ", $distcent,"\n";
 
   my $bld_lst = [
-                  { type => "command", level => 7 },
-                  { type => "warehouse", level => 6 },
+                  { type => "policestation", level => 8 },
+                  { type => "policestation", level => 9 },
+                  { type => "policestation", level => 10 },
+                  { type => "opera", level => 7 },
+                  { type => "opera", level => 8 },
+                  { type => "opera", level => 9 },
+                  { type => "opera", level => 10 },
+                  { type => "food", level => 8 },
+                  { type => "food", level => 9 },
+                  { type => "food", level => 10 },
+                  { type => "art", level => 8 },
+                  { type => "art", level => 9 },
+                  { type => "art", level => 10 },
+                  { type => "command", level => 8 },
+                  { type => "command", level => 9 },
+                  { type => "command", level => 10 },
+                  { type => "ibs", level => 8 },
+                  { type => "ibs", level => 9 },
+                  { type => "ibs", level => 10 },
+                  { type => "parliament", level => 8 },
+                  { type => "parliament", level => 9 },
+                  { type => "parliament", level => 10 },
                   { type => "warehouse", level => 7 },
-                  { type => "parliament", level => 6 },
-                  { type => "parliament", level => 7 },
-                  { type => "ibs", level => 6 },
-                  { type => "ibs", level => 7 },
+                  { type => "warehouse", level => 8 },
+                  { type => "warehouse", level => 9 },
+                  { type => "warehouse", level => 10 },
                 ];
   my $em_bit;
   print "Getting View\n";
