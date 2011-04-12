@@ -27,8 +27,6 @@ exit;
 sub process_mission {
   my ($file) = @_;
   my $json = JSON->new->utf8(1);
-  $json = $json->pretty([1]);
-  $json = $json->canonical([1]);
   open(MISSION, "$file") or return 0;
   my $header = <MISSION>;
   chomp($header);
@@ -38,9 +36,11 @@ sub process_mission {
 
   my $change = check_mission($json_txt);
   if (1) { 
+    $json = $json->pretty([1]);
+    $json = $json->canonical([1]);
     open(MISSION, ">", "$file") or return 0;
     print MISSION $header, "\n";
-    print MISSION $json->encode($json_txt);
+    print MISSION $json->pretty->canonical->encode($json_txt);
     close(MISSION);
     return 1;
   }
@@ -50,14 +50,38 @@ sub process_mission {
 sub check_mission {
   my ($json_txt) = @_; 
 
-  my $change = 0;
+  my $change = 1;
   if (defined($json_txt->{mission_objective}->{ships})) {
     $change = 1 if check_ship("object", \@{$json_txt->{mission_objective}->{ships}});
   }
-  if (defined($json_txt->{mission_objective}->{ships})) {
+  if (defined($json_txt->{mission_reward}->{ships})) {
     $change = 1 if check_ship("reward", \@{$json_txt->{mission_reward}->{ships}});
   }
+
+  $json_txt->{mission_reward} = sort_parts($json_txt->{mission_reward});
+  $json_txt->{mission_objective} = sort_parts($json_txt->{mission_objective});
+
   return $change;
+}
+
+sub sort_parts {
+  my ($part_ref) = @_;
+
+  foreach my $type (%$part_ref) {
+    if ($type eq "fleet_movement") {
+      @{$part_ref->{"$type"}} = 
+        sort { $a->{ship_type} cmp $b->{ship_type} } @{$part_ref->{"$type"}};
+    }
+    elsif ($type eq "plans") {
+      @{$part_ref->{"$type"}} = 
+        sort { $a->{classname} cmp $b->{classname} } @{$part_ref->{"$type"}};
+    }
+    elsif ($type eq "ships") {
+      @{$part_ref->{"$type"}} = 
+        sort { $a->{type} cmp $b->{type} } @{$part_ref->{"$type"}};
+    }
+  }
+  return $part_ref;
 }
 
 sub check_ship {
