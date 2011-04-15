@@ -26,7 +26,7 @@ GetOptions(
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $cfg_file,
-    debug    => 1,
+#    debug    => 1,
   );
 
   usage() if $help;

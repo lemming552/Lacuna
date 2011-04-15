@@ -123,7 +123,7 @@ sub get_stars {
   while(<$fh>) {
     chomp;
     my ($id, $name, $x, $y, $color, $zone) = split(/,/, $_, 6);
-    next if $zone ne $sector;
+#    next if $zone ne $sector;
     $star_hash{$id} = {
       id    => $id,
       name  => $name,
