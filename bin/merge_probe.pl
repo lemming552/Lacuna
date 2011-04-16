@@ -42,7 +42,7 @@ GetOptions(
   my %mhash;
   my %checked;
   for my $elem (@$merged) {
-    my $mkey = join("x:",$elem->{x},"y:",$elem->{y});
+    my $mkey = join("","x:",$elem->{x},"y:",$elem->{y});
     unless (defined($elem->{observatory})) {
       $elem->{observatory}->{empire} = "none",
       $elem->{observatory}->{oid} = 0,
@@ -54,15 +54,15 @@ GetOptions(
     if (defined($mhash{$mkey})) {
       if ($elem->{observatory}->{stime} > $mhash{$mkey}->{observatory}->{stime}) {
         $mhash{$mkey} = $elem;
-        print STDERR "$mkey dupe!\n"; # This shouldn't actually happen
       }
+      print STDERR "$mkey dupe!\n"; # This shouldn't actually happen
     }
     else {
       $mhash{$mkey} = $elem;
     }
   }
   for my $elem ( @$import ) {
-    my $mkey = join("x:",$elem->{x},"y:",$elem->{y});
+    my $mkey = join("","x:",$elem->{x},"y:",$elem->{y});
     unless (defined($elem->{observatory})) {
       $elem->{observatory}->{empire} = "none",
       $elem->{observatory}->{oid} = 0,
