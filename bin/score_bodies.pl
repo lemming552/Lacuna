@@ -124,16 +124,18 @@ GetOptions(
       $bod->{type} = "U";
       $bod->{bscore} = 0;  #erk
     }
-    score_system(\%sys, $bod);
+    score_system_fp(\%sys, $bod);
   }
   for my $key (keys %sys) {
     $sys{"$key"}->{sscore} = join(":", $sys{"$key"}->{G}, $sys{"$key"}->{H}, $sys{"$key"}->{A});
+    $sys{"$key"}->{FW} = score_foodw($sys{$key}->{FRNG});
   }
 
 
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-         "Name", "Sname", "BS", "SS", "T", "YS", "O", "Dist", "SD", "X", "Y", "Type",
-         "Img","Size", "Own", "Zone", "Total", "Mineral", "Amt";
+  my @fields = ( "Name", "Sname", "BS", "SS", "TS", "TCS", "TYS", "TCYS", "FW", "O", "Dist",
+                 "SD", "X", "Y", "Type", "Img","Size", "Own", "Zone", "Total", "Mineral", "Amt");
+  printf "%s\t" x scalar @fields, @fields;
+  print "\n";
   for $bod (sort byscore @$bodies) {
     next if ($bod->{type} eq "U");
     next if ($bod->{type} eq "A" and $opt_a == 0);
@@ -141,10 +143,11 @@ GetOptions(
     next if ($bod->{type} eq "H" and $opt_h == 0);
     next if ($bod->{dist} > $max_dist);
   
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+    printf "%s\t" x ( scalar @fields - 2),
            $bod->{name}, $bod->{star_name}, $bod->{bscore},
-           $sys{"$bod->{star_id}"}->{sscore}, $sys{"$bod->{star_id}"}->{T},
-           $sys{"$bod->{star_id}"}->{YS},
+           $sys{"$bod->{star_id}"}->{sscore}, $sys{"$bod->{star_id}"}->{TS},
+           $sys{"$bod->{star_id}"}->{TCS}, $sys{"$bod->{star_id}"}->{TYS},
+           $sys{"$bod->{star_id}"}->{TCYS}, $sys{"$bod->{star_id}"}->{FW},
            $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y},
            $bod->{type}, $bod->{image}, $bod->{size}, $bod->{empire}->{name},
            $bod->{zone}, $bod->{ore_total};
@@ -157,69 +160,141 @@ GetOptions(
   }
 exit;
 
+sub score_foodw {
+  my ($size_a) = @_;
+  
+  my $score = 0;
+  my $skip = 0;
+  my $num;
+  for $num (2..4) {
+    if ($size_a->[$num] >= 50 and $size_a->[$num] < 70) {
+      $score += 1;
+    }
+    elsif ($size_a->[$num] > 95) {
+      $score += 1;
+    }
+    else {
+      $skip = 1;
+    }
+  }
+
+  my $pass_5 = 0;
+  my $pass_6 = 0;
+  if ($size_a->[5] >= 50 and $size_a->[5] < 70) {
+    $score += 1;
+    $pass_5 = 1;
+  }
+  elsif ($size_a->[5] > 95) {
+    $score += 1;
+    $pass_5 = 1;
+  }
+  if ($size_a->[6] >= 50 and $size_a->[6] < 70) {
+    $score += 1;
+    $pass_6 = 1;
+  }
+  elsif ($size_a->[6] > 95) {
+    $score += 1;
+    $pass_6 = 1;
+  }
+  $skip = 1 unless ($pass_5 + $pass_6);
+
+  return $score if $skip;
+  for $num (1,7) {
+    if ($size_a->[$num] >= 55 and $size_a->[$num] < 70) {
+      $score += 1;
+    }
+    elsif ($size_a->[$num] > 95) {
+      $score += 1;
+    }
+    else {
+      $skip = 1;
+    }
+  }
+  return $score if $skip;
+  if ($size_a->[8] >= 55 and $size_a->[8] < 70) {
+    $score += 1;
+  }
+  elsif ($size_a->[8] > 95) {
+    $score += 1;
+  }
+  return $score;
+}
+
 # Highly Arbritrary system for scoring a star system based on what is in it.
-sub score_system {
+sub score_system_fp {
   my ($sys, $bod) = @_;
 
+  my $star_id = $bod->{star_id};
 
-  unless (defined($sys->{"$bod->{star_id}"}) ) {
-    $sys->{"$bod->{star_id}"}->{sscore} = "";
-    $sys->{"$bod->{star_id}"}->{A} = 0;
-    $sys->{"$bod->{star_id}"}->{G} = 0;
-    $sys->{"$bod->{star_id}"}->{H} = 0;
-    $sys->{"$bod->{star_id}"}->{T} = 0;
-    $sys->{"$bod->{star_id}"}->{YS} = 0;
+  unless (defined($sys->{"$star_id"}) ) {
+    $sys->{"$star_id"}->{sscore} = "";
+    $sys->{"$star_id"}->{A} = 0;
+    $sys->{"$star_id"}->{G} = 0;
+    $sys->{"$star_id"}->{H} = 0;
+    $sys->{"$star_id"}->{TS} = 0;
+    $sys->{"$star_id"}->{TCS} = 0;
+    $sys->{"$star_id"}->{TYS} = 0;
+    $sys->{"$star_id"}->{TCYS} = 0;
+    $sys->{"$star_id"}->{FW} = 0;
+    $sys->{"$star_id"}->{FRNG} = [ (0) x 9 ];
   }
-  $sys{"$bod->{star_id}"}->{YS} += $bod->{bscore};
+  $sys{"$star_id"}->{TYS} += $bod->{bscore};
+  if ($bod->{type} eq "H" or $bod->{type} eq "G") {
+    $sys{"$star_id"}->{TCYS} += $bod->{bscore};
+  }
+
+  $sys->{"$star_id"}->{FRNG}->[$bod->{orbit}] = $bod->{size};
 
   if ($bod->{type} eq "H") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
          ($bod->{size} >= MIN_H1)) {
-      $sys->{"$bod->{star_id}"}->{H} += 1;
+      $sys->{"$star_id"}->{H} += 1;
       
     }
     elsif ( ($bod->{orbit} == 3) and
          ($bod->{size} >= MIN_H3)) {
-      $sys->{"$bod->{star_id}"}->{H} += 1;
+      $sys->{"$star_id"}->{H} += 1;
     }
     elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
          ($bod->{size} >= MIN_H5)) {
-      $sys->{"$bod->{star_id}"}->{H} += 1;
+      $sys->{"$star_id"}->{H} += 1;
     }
   }
   elsif ($bod->{type} eq "G") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
          ($bod->{size} >= MIN_G1)) {
-      $sys->{"$bod->{star_id}"}->{G} += 1;
+      $sys->{"$star_id"}->{G} += 1;
     }
     elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
          ($bod->{size} >=  MIN_G5)) {
-      $sys->{"$bod->{star_id}"}->{G} += 1;
+      $sys->{"$star_id"}->{G} += 1;
     }
   }
   elsif ($bod->{type} eq "A") {
     my $ascore = score_atype($bod->{image});
     if ( $ascore > MIN_A) {
-      $sys->{"$bod->{star_id}"}->{A} += 1;
+      $sys->{"$star_id"}->{A} += 1;
     }
   }
   else {
-    $sys->{"$bod->{star_id}"}->{A} += 0;
+    $sys->{"$star_id"}->{A} += 0;
   }
+
   if ($bod->{type} eq "U") {
-    $sys->{"$bod->{star_id}"}->{T} += 0
+    $sys->{"$star_id"}->{TCS} += 0
   }
   elsif ($bod->{type} eq "A" or ($bod->{orbit} == 1 or $bod->{orbit} >= 7)) {
     if ($bod->{orbit} == 8) {
-      $sys->{"$bod->{star_id}"}->{T} += int($bod->{size}/3+0.5);
+      $sys->{"$star_id"}->{TCS} += int($bod->{size}/3+0.5);
     }
     else {
-      $sys->{"$bod->{star_id}"}->{T} += int($bod->{size}/2+0.5);
+      $sys->{"$star_id"}->{TCS} += int($bod->{size}/2+0.5);
     }
   }
   else {
-    $sys->{"$bod->{star_id}"}->{T} += $bod->{size};
+    $sys->{"$star_id"}->{TCS} += $bod->{size};
   }
+  $sys->{"$star_id"}->{TS} += $bod->{size};
 }
 
 sub score_rock {
@@ -295,7 +370,7 @@ sub score_gas {
 
   my $score = 0;
   if ($bod->{size} >= 121) {
-    $score += 100;
+    $score += 60;
   }
   elsif ($bod->{size} > 116) {
     $score += 50;

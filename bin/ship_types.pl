@@ -52,7 +52,11 @@ use utf8;
     my $stealth = int($ships->{$ship}->{attributes}->{stealth} *
          (1 + ($opt->{css}*5 + $opt->{shipyard} + $opt->{cloaking}*5 +
                $pilot*3 + $opt->{deception}*3)/100) + 0.5);
-    print join(",", $opt->{planet}, $ship, $combat, $hold_size, $speed, $stealth), "\n";
+    print join(",", $opt->{planet}, $ship,
+                    $ships->{$ship}->{attributes}->{combat}, $combat,
+                    $ships->{$ship}->{attributes}->{hold_size}, $hold_size,
+                    $ships->{$ship}->{attributes}->{speed}, $speed,
+                    $ships->{$ship}->{attributes}->{stealth}, $stealth), "\n";
     $ships->{$ship}->{figured} = {
       combat => $combat,
       hold_size => $hold_size,
