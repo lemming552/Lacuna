@@ -160,8 +160,26 @@ sub merge_probe {
       delete $orig->{water_stored};
     }
   }
+  if ($orig->{star_name} ne $data->{star_name}) {
+    printf "Starname changed from %s to %s.\n",
+             $orig->{star_name}, $data->{star_name};
+    $orig->{star_name} = $data->{star_name};
+  }
+  if (defined($data->{station})) {
+    if (!defined($orig->{station})) {
+      printf "Star %s has been claimed by Station: %s!\n",
+              $data->{star_name}, $data->{station}->{name};
+      %{$orig->{station}} = %{$data->{station}};
+    }
+    elsif ($data->{station}->{name} ne $orig->{station}->{name}) {
+      printf "Star %s has been claimed by Station: %s from Station: %s!\n",
+              $data->{star_name}, $data->{station}->{name},
+              $orig->{station}->{name};
+      %{$orig->{station}} = %{$data->{station}};
+    }
+  }
   if ($orig->{type} ne $data->{type}) {
-# We probably have a new space station to account for
+# We probably have a new space station or asteroid to account for
     printf "Changing type of %s from %s:%s to %s:%s\n",
              $data->{name}, $orig->{image}, $orig->{type},
              $data->{image}, $data->{type};
@@ -212,9 +230,10 @@ sub check_sname {
   unless (defined($elem->{star_name})) {
     $elem->{star_name} = $stars->{$elem->{star_id}}->{name};
   }
-  if ($elem->{star_name} ne $stars->{$elem->{star_id}}->{name}) {
-    $elem->{star_name} = $stars->{$elem->{star_id}}->{name};
-  }
+  $elem->{star_name} =~ y/"'//d;
+#  if ($elem->{star_name} ne $stars->{$elem->{star_id}}->{name}) {
+#    $elem->{star_name} = $stars->{$elem->{star_id}}->{name};
+#  }
 }
 
 sub get_stars {
