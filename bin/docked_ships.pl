@@ -8,14 +8,17 @@ use List::Util            qw(min max);
 use List::MoreUtils       qw( uniq );
 use Getopt::Long          qw(GetOptions);
 use Games::Lacuna::Client ();
+use JSON;
 
 my $ships_per_page;
 my @specs = qw( combat hold_size max_occupants speed stealth );
 my %opts;
+$opts{data} = "data/data_docked.js";
 
 GetOptions(
     \%opts,
     'planet=s',
+    'data=s',
     @specs,
     'travelling',
     'mining',
@@ -52,20 +55,22 @@ my %planets = map { $empire->{planets}{$_}, $_ } keys %{ $empire->{planets} };
 my $total_str     = 'Total Docks';
 my $mining_str    = 'Ships Mining';
 my $defend_str    = 'Ships on remote Defense';
+my $excavator_str = 'Ships Excavating';
 my $available_str = 'Docks Available';
 my @all_ships;
+my $ship_hash = {};
 
 # Scan each planet
 foreach my $name ( sort keys %planets ) {
 
-    next if defined $opts{planet} && $opts{planet} ne $name;
+    next if defined $opts{planet} && lc $opts{planet} ne lc $name;
 
     # Load planet data
     my $planet    = $client->body( id => $planets{$name} );
     my $result    = $planet->get_buildings;
-    my $body      = $result->{status}->{body};
-    
     my $buildings = $result->{buildings};
+    
+    next if $result->{status}{body}{type} eq 'space station';
 
     # Find the first Space Port
     my $space_port_id = List::Util::first {
@@ -78,14 +83,15 @@ foreach my $name ( sort keys %planets ) {
     
     my $space_port = $client->building( id => $space_port_id, type => 'SpacePort' );
     
-    my $mining_count = 0;
-    my $defend_count = 0;
+    my $mining_count    = 0;
+    my $defend_count    = 0;
+    my $excavator_count = 0;
     my $filter;
     
     push @{ $filter->{task} }, 'Mining'
         if $opts{mining};
     
-    push @{ $filter->{task} }, 'Travelling  '
+    push @{ $filter->{task} }, 'Travelling'
         if $opts{travelling};
     
     my $ships = $space_port->view_all_ships(
@@ -94,6 +100,9 @@ foreach my $name ( sort keys %planets ) {
         },
         $filter ? $filter : (),
     )->{ships};
+
+    $ship_hash->{$name} = $ships;
+
     
     $mining_count +=
         grep {
@@ -103,6 +112,12 @@ foreach my $name ( sort keys %planets ) {
     $defend_count +=
         grep {
             $_->{task} eq 'Defend'
+        } @$ships;
+    
+    $excavator_count +=
+        grep {
+               $_->{task} eq 'Travelling'
+            && $_->{type} eq 'excavator'
         } @$ships;
     
     @$ships =
@@ -130,6 +145,12 @@ foreach my $name ( sort keys %planets ) {
             $defend_count
     }
     
+    if ( $excavator_count ) {
+        printf "%${max_length}s: %d\n",
+            $excavator_str,
+            $excavator_count
+    }
+    
     printf "%${max_length}s: %d\n",
         $available_str,
         $space_port_status->{docks_available};
@@ -141,6 +162,14 @@ foreach my $name ( sort keys %planets ) {
 
 print_ships( "Total Ships", \@all_ships )
     unless $opts{planet};
+
+  my $json = JSON->new->utf8(1);
+  $json = $json->pretty([1]);
+  $json = $json->canonical([1]);
+
+  open(DUMP, ">", "$opts{data}") or die;
+  print DUMP $json->pretty->canonical->encode($ship_hash);
+  close(DUMP);
 
 exit;
 
