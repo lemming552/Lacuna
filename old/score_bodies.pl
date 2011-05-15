@@ -8,7 +8,9 @@
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-use JSON;
+use YAML;
+use YAML::XS;
+use Data::Dumper;
 use utf8;
 
 # Constants used for what is a decent sized planet
@@ -24,10 +26,10 @@ use constant {
 my $home_x;
 my $home_y;
 my $max_dist = 5000;
-my $probe_file = "data/probe_data_cmb.js";
+my $probe_file = "data/probe_data_cmb.yml";
 my $star_file   = "data/stars.csv";
 my $statistics  = "data/system_stats.csv";
-my $planet_file = "data/planet_score.js";
+my $planet_file = "data/planet_score.yml";
 my $planet = '';
 my $help; my $opt_a = 0; my $opt_g = 0; my $opt_h = 0; my $opt_s; my $nodist = 0;
 
@@ -52,28 +54,18 @@ GetOptions(
     $opt_a = $opt_g = $opt_h = 1;
   }
 
-  my $json = JSON->new->utf8(1);
-
   my $bod;
   my $bodies;
   my $planets;
   if (-e "$probe_file") {
-    my $pf;
-    open($pf, "$probe_file") || die "Could not open $probe_file\n";
-    my $lines = join("", <$pf>);
-    $bodies = $json->decode($lines);
-    close($pf);
+    $bodies  = YAML::XS::LoadFile($probe_file);
   }
   else {
     print STDERR "$probe_file not found!\n";
     die;
   }
   if (-e "$planet_file") {
-    my $pf;
-    open($pf, "$planet_file") || die "Could not open $planet_file\n";
-    my $lines = join("", <$pf>);
-    $planets = $json->decode($lines);
-    close($pf);
+    $planets = YAML::XS::LoadFile($planet_file);
   }
   else {
     unless (defined($home_x) and defined($home_y)) {
@@ -138,11 +130,10 @@ GetOptions(
     $sys{"$key"}->{sscore} = join(":", $sys{"$key"}->{G}, $sys{"$key"}->{H}, $sys{"$key"}->{A});
     $sys{"$key"}->{FW} = score_foodw($sys{$key}->{FRNG});
   }
-  print STDERR scalar keys %sys, " systems and ", scalar @$bodies, " bodies checked.\n";
 
 
   my @fields = ( "Name", "Sname", "BS", "SS", "TS", "TCS", "TYS", "TCYS", "FW", "O", "Dist",
-                 "SD", "X", "Y", "Type", "Img","Size", "Own", "Zone", "Water", "Total", "Mineral", "Amt");
+                 "SD", "X", "Y", "Type", "Img","Size", "Own", "Zone", "Total", "Mineral", "Amt");
   printf "%s\t" x scalar @fields, @fields;
   print "\n";
   for $bod (sort byscore @$bodies) {
@@ -159,7 +150,7 @@ GetOptions(
            $sys{"$bod->{star_id}"}->{TCYS}, $sys{"$bod->{star_id}"}->{FW},
            $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y},
            $bod->{type}, $bod->{image}, $bod->{size}, $bod->{empire}->{name},
-           $bod->{zone}, $bod->{water}, $bod->{ore_total};
+           $bod->{zone}, $bod->{ore_total};
     for my $ore (sort keys %{$bod->{ore}}) {
       if ($bod->{ore}->{$ore} > 1) {
         print "\t$ore\t", $bod->{ore}->{$ore};
@@ -418,7 +409,7 @@ sub get_stars {
   my ($sfile) = @_;
 
   my $fh;
-  open ($fh, "<:utf8", "$sfile") or die;
+  open ($fh, "<", "$sfile") or die;
 
   my $fline = <$fh>;
   my %star_hash;

@@ -9,11 +9,11 @@
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-use JSON;
+use YAML::XS;
 use utf8;
 
-my $import_file = "data/probe_data_raw.js";
-my $merge_file  = "data/probe_data_cmb.js";
+my $import_file = "data/probe_data_raw.yml";
+my $merge_file  = "data/probe_data_cmb.yml";
 my $star_file   = "data/stars.csv";
 my $help = 0;
 
@@ -26,20 +26,9 @@ GetOptions(
 
   usage() if $help;
 
-  my $json = JSON->new->utf8(1);
-  $json = $json->pretty([1]);
-  $json = $json->canonical([1]);
-
-  my $imp_f; my $mrg_f; my $new_f; my $lines;
-  open($imp_f, "$import_file") || die "Could not open $import_file\n";
-  $lines = join("", <$imp_f>);
-  my $import = $json->decode($lines);
-  close($imp_f);
-
-  open($mrg_f, "$merge_file") || die "Could not open $merge_file\n";
-  $lines = join("", <$mrg_f>);
-  my $merged = $json->decode($lines);
-  close($mrg_f);
+  
+  my $import = YAML::XS::LoadFile($import_file);
+  my $merged = YAML::XS::LoadFile($merge_file);
 
   my $stars;
   if (-e "$star_file") {
@@ -98,9 +87,11 @@ GetOptions(
   }
   my @merged = map { $mhash{$_} } sort keys %mhash;
 
-  open($new_f, ">", "$merge_file") || die "Could not open $merge_file\n";
-  print $new_f $json->pretty->canonical->encode(\@merged);
-  close($new_f);
+  my $fh;
+  open($fh, ">", "$merge_file") || die "Could not open $merge_file";
+
+  YAML::XS::DumpFile($fh, \@merged);
+  close($fh);
 exit;
 
 sub merge_probe {
