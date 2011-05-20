@@ -6,26 +6,26 @@ use lib "$FindBin::Bin/../lib";
 use List::Util            (qw(first));
 use Getopt::Long          (qw(GetOptions));
 use Games::Lacuna::Client ();
-use YAML::XS;
+use JSON;
 use utf8;
 
-  my $planet_name = "";
+  my @planets;
   my $cfg_file = "lacuna.yml";
 # Create program for generating shipyard file.
-  my $yard_file = "data/shipyards.yml";
+  my $yard_file = "data/shipyards.js";
   my $help    = 0;
   my $stype;
   my $number = 0;
-  my $reserve =0;
+  my $slow;
 
   GetOptions(
-    'planet=s' => \$planet_name,
-    'config=s' => \$cfg_file,
-    'yards=s'  => \$yard_file,
-    'type=s'   => \$stype,
-    'help'     => \$help,
-    'number=i' => \$number,
-    'reserve=i' => \$reserve,
+    'planet=s@'  => \@planets,
+    'config=s'  => \$cfg_file,
+    'yards=s'   => \$yard_file,
+    'type=s'    => \$stype,
+    'help'      => \$help,
+    'number=i'  => \$number,
+    'slow'      => \$slow,
   );
   
   my $glc = Games::Lacuna::Client->new(
@@ -33,9 +33,8 @@ use utf8;
     # debug    => 1,
   );
 
-  usage() if $help or $planet_name eq "" or $stype eq "";
+  usage() if $help or scalar @planets == 0 or $stype eq "";
 
-# Load urls of buildings that don't give useful stats.
   my @ship_types = ship_types();
 
   my $ship_build = first { $_ =~ /$stype/ } @ship_types;
@@ -46,94 +45,130 @@ use utf8;
   }
   print "Will try to build $ship_build\n";
 
+  my $json = JSON->new->utf8(1);
   my $yard_data;
   if (-e $yard_file) {
-    $yard_data = YAML::XS::LoadFile($yard_file);
+    my $yf; my $lines;
+    open($yf, "$yard_file") || die "Could not open $yard_file\n";
+    $lines = join("", <$yf>);
+    $yard_data = $json->decode($lines);
+    close($yf);
   }
   else {
     print "Can not load $yard_file\n";
   }
 
-  my $yard_id = first { $_ } keys %{$yard_data->{"$planet_name"}};
-  my $yard_level = $yard_data->{"$planet_name"}->{"$yard_id"}->{level};
+  my $rpc_cnt;
+  my $rpc_lmt;
+  my %yhash;
+  my $planet;
+  for $planet (sort @planets) {
+    my $yard_id = first { $_ } keys %{$yard_data->{"$planet"}};
+    die "No yard id found for $planet!\n" unless defined($yard_id);
+    $yhash{"$planet"}->{maxq} = $yard_data->{"$planet"}->{"$yard_id"}->{level};
+    if (defined($yard_data->{"$planet"}->{"$yard_id"}->{maxq})) {
+      $yhash{"$planet"}->{maxq} = $yard_data->{"$planet"}->{"$yard_id"}->{maxq};
+    }
+    unless (defined($yard_data->{"$planet"}->{"$yard_id"}->{reserve})) {
+      $yard_data->{"$planet"}->{"$yard_id"}->{reserve} = 0;
+    }
+    $yhash{"$planet"}->{reserve} = $yard_data->{"$planet"}->{"$yard_id"}->{reserve};
 
-  print "$planet_name: $yard_id we hope with a level of ",$yard_level,"\n";
-  unless ($yard_level > 0 and $yard_data->{"$planet_name"}->{"$yard_id"}->{name} eq "Shipyard") {
-    print "Yard data error! ",$yard_data->{"$planet_name"}->{"$yard_id"}->{name}," : ",$yard_level,"\n";
-    exit;
-  }
+    print "$planet: $yard_id we hope with a level of ",$yard_data->{"$planet"}->{"$yard_id"}->{level},
+          ". Max Queue of ", $yard_data->{"$planet"}->{"$yard_id"}->{maxq},
+          " and reserve of ", $yard_data->{"$planet"}->{"$yard_id"}->{reserve}, "\n";
 
-  my $yard = $glc->building(id => $yard_id, type => "Shipyard");
+    unless ($yard_data->{"$planet"}->{"$yard_id"}->{level} > 0
+            and $yard_data->{"$planet"}->{"$yard_id"}->{name} eq "Shipyard") {
+      print "Yard data error! ",$yard_data->{"$planet"}->{"$yard_id"}->{name},
+            " : ",$yard_data->{"$planet"}->{"$yard_id"}->{level},".\n";
+      exit;
+    }
+    $yhash{"$planet"}->{yard_pnt} = $glc->building(id => $yard_id, type => "Shipyard");
+    my $buildable  = $yhash{"$planet"}->{yard_pnt}->get_buildable();
 
-# Get dock space from get_buildable
-  my $buildable = $yard->get_buildable();
+    $yhash{"$planet"}->{dockspace} =
+      $buildable->{docks_available} - $yhash{"$planet"}->{reserve};
 
+    if ($buildable->{status}->{body}->{name} ne "$planet") {
+      print STDERR "Mismatch of name! ", $buildable->{status}->{body}->{name},
+                   "not equal to ", $planet, "\n";
+      die;
+    }
 
-#  print YAML::XS::Dump($buildable); exit;
-  print "Starting with ", $buildable->{status}->{empire}->{rpc_count},
-        " of ",$buildable->{status}->{server}->{rpc_limit}, " RPC\n";
-  my $dockspace = $buildable->{docks_available} - $reserve;
+    unless ($buildable->{buildable}->{"$ship_build"}->{can}) {
+      print "$planet Can not build $ship_build : ",
+            @{$buildable->{buildable}->{"$ship_build"}->{reason}}, "\n";
+      die;
+    }
 
-  if ($buildable->{status}->{body}->{name} ne "$planet_name") {
-    die "Mismatch of name! $buildable->{status}->{body}->{name} ne $planet_name";
-  }
-  
+    $yhash{"$planet"}->{bldtime} =
+        $buildable->{buildable}->{"$ship_build"}->{cost}->{seconds};
 
-# Can we build selected?
-  if ($buildable->{buildable}->{"$ship_build"}->{can}) {
-# Get build time
-    my $bld_time = $buildable->{buildable}->{"$ship_build"}->{cost}->{seconds};
-
-    my $loop_num;
-    if ($number == 0 or $dockspace < $number) {
-      $loop_num = $dockspace;
+    if ($number == 0 or $yhash{"$planet"}->{dockspace} < $number) {
+      $yhash{"$planet"}->{bldnum} = $yhash{"$planet"}->{dockspace};
     }
     else {
-      $loop_num = $number;
+      $yhash{"$planet"}->{bldnum} = $number;
     }
-    for my $keel (1..$loop_num) {
+    $yhash{"$planet"}->{keels} = 0;
+    $rpc_cnt = $buildable->{status}->{empire}->{rpc_count};
+    $rpc_lmt = $buildable->{status}->{server}->{rpc_limit};
+  }
+  print "Starting with ", $rpc_cnt, " of ", $rpc_lmt, " RPC\n";
+  
+  my $not_done = 1;
+
+  while ($not_done) {
+    $not_done = 0;
+    for $planet (sort keys %yhash) {
+      if ($yhash{"$planet"}->{keels} >= $yhash{"$planet"}->{bldnum}) {
+         print $yhash{"$planet"}->{keels}," done for $planet\n";
+         next;
+      }
       my $bld_result;
-      my $ships_building = 0;
+      my $ships_building;
       my $ok = eval {
-        $bld_result = $yard->build_ship($ship_build);
+        $bld_result = $yhash{"$planet"}->{yard_pnt}->build_ship($ship_build);
       };
       if ($ok) {
-        print "Queued up $ship_build : $keel of $loop_num ";
-        $ships_building = $bld_result->{number_of_ships_building};
+        $yhash{"$planet"}->{keels}++;
+        print "Queued up $ship_build : ",
+              $yhash{"$planet"}->{keels}, " of ",
+              $yhash{"$planet"}->{bldnum}, " at ", $planet, " ";
+              $ships_building = $bld_result->{number_of_ships_building};
+        if ($ships_building >= $yhash{"$planet"}->{maxq} &&
+            $yhash{"$planet"}->{keels} < $yhash{"$planet"}->{bldnum}) {
+          print " We have $ships_building ships building. Sleeping ",
+                $yhash{"$planet"}->{bldtime}," seconds. \n";
+          sleep($yhash{"$planet"}->{bldtime});
+        }
+        else {
+          print "\n";
+          sleep 2;
+        }
       }
       else {
         my $error = $@;
         if ($error =~ /1009|1002|1011/) {
           print $error, "\n";
-          last;
+# Take shipyard off
         }
         elsif ($error =~ /1010/) {
           print $error, " taking a minute off.\n";
           sleep(60);
-          next;
         }
         elsif ($error =~ /1013/) {
           print " Queue Full: Sleeping ",
-                  $bld_time," seconds. \n";
-          sleep($bld_time);
-          next;
+                  $yhash{"$planet"}->{bldtime}," seconds. \n";
+          sleep($yhash{"$planet"}->{bldtime});
         }
         else {
           print $error, "\n";
         }
       }
-      if ($ships_building >= $yard_level && $keel < $loop_num) {
-        print " We have $ships_building ships building. Sleeping ",
-                $bld_time," seconds. \n";
-        sleep($bld_time);
-      }
-      else {
-        print "\n";
-      }
+      $not_done = 1 if ($yhash{"$planet"}->{keels} < $yhash{"$planet"}->{bldnum});
     }
-  }
-  else {
-    print "Can not build $ship_build : ", @{$buildable->{buildable}->{"$ship_build"}->{reason}},"\n";
   }
   print "$glc->{rpc_count} RPC\n";
 exit;
@@ -144,13 +179,12 @@ Usage: $0 --planet <planet> --ships <shiptype> [options]
 
 
 Options:
-  --help              - Prints this out
-  --config <cfg_file> - Config file, defaults to lacuna.yml
-  --planet <planet>   - Planet Name you are building on required.
-  --yards  <file>     - File with shipyard level & ID default data/shipyards.yml
-  --type   shiptype   - ship type you want to build, partial name fine
-  --number number     - Number of ship you wish to produce
-
+  --help               - Prints this out
+  --config  cfg_file   - Config file, defaults to lacuna.yml
+  --planet  planet     - Planet Name you are building on required.
+  --yards   file       - File with shipyard level & ID default data/shipyards.yml
+  --type    shiptype   - ship type you want to build, partial name fine
+  --number  number     - Number of ship you wish to produce
 END
  exit 1;
 }
@@ -190,6 +224,8 @@ sub ship_types {
         space_station
         spy_pod
         spy_shuttle
+        stake
+        supply_pod4
         surveyor
         sweeper
         terraforming_platform_ship

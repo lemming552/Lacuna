@@ -17,6 +17,7 @@ use Exception::Class;
         planet => '',
         config => "lacuna.yml",
         dumpfile => "data/data_builds.js",
+        station => 0,
   );
 
   GetOptions(\%opts,
@@ -25,6 +26,7 @@ use Exception::Class;
     'planet=s',
     'config',
     'dumpfile',
+    'station',
   );
 
   usage() if $opts{'h'};
@@ -50,7 +52,14 @@ use Exception::Class;
     verbose("Inspecting $planet_name\n");
     my $planet    = $glc->body(id => $planets{$planet_name});
     my $result    = $planet->get_buildings;
+    if ($result->{status}{body}{type} eq 'space station' && !$opts{'station'}) {
+      verbose("Skipping Space Station: $planet_name\n");
+      next;
+    }
     my $buildings = $result->{buildings};
+    foreach my $bldid (keys %$buildings) {
+      $buildings->{$bldid}->{leveled} = $buildings->{$bldid}->{level};
+    }
     $status->{$planet_name} = $buildings;
   }
 
@@ -64,7 +73,9 @@ sub usage {
     diag(<<END);
 Usage: $0 [options]
 
-This program just gets an inventory of the buildings on your planets
+This program just gets an inventory of the buildings on your planets.
+Use parse_building.pl to output a csv of the file.
+leveled is a field inserted for use by an autobuild program. (still being developed)
 
 Options:
   --help             - This info.
@@ -72,6 +83,7 @@ Options:
   --config <file>    - Specify a GLC config file, normally lacuna.yml.
   --planet <name>    - Specify planet
   --dumpfile         - data dump for all the info we don't print
+  --station          - include space stations in listing
 END
   exit 1;
 }
