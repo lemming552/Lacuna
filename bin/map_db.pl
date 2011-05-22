@@ -9,11 +9,11 @@ use DBI;
 use Data::Dumper;
 use Imager;
 use Getopt::Long qw(GetOptions);
-use YAML::Any ();
+use JSON;
 use Text::CSV;
 
   my $imgfile = "map_db.png";
-  my $map_file = 'data/map_empire.yml';
+  my $map_file = 'data/map_empire.js';
   my $dbfile = 'data/stars.db';
   my $starfile = 'data/stars.csv';
   my $share = 0; # If share, we strip out color coding occupied planets
@@ -31,9 +31,14 @@ use Text::CSV;
     'blur'     => \$blur,
   );
 
+  my $json = JSON->new->utf8(1);
   my $config;
   if (-e $map_file) {
-    $config=YAML::Any::LoadFile($map_file);
+    my $map_f; my $lines;
+    open($map_f, "$map_file") || die "Could not open $map_file\n";
+    $lines = join("", <$map_f>);
+    $config = $json->decode($lines);
+    close($map_f);
   }
 
   my $my_empire_id = $config->{empire_id} || '';

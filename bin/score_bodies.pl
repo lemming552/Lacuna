@@ -10,6 +10,7 @@ use warnings;
 use Getopt::Long qw(GetOptions);
 use JSON;
 use utf8;
+binmode STDOUT, ":utf8";
 
 # Constants used for what is a decent sized planet
 use constant {
@@ -145,7 +146,7 @@ GetOptions(
                  "SD", "X", "Y", "Type", "Img","Size", "Own", "Zone", "Water", "Total", "Mineral", "Amt");
   printf "%s\t" x scalar @fields, @fields;
   print "\n";
-  for $bod (sort byscore @$bodies) {
+  for $bod (sort byfw @$bodies) {
     next if ($bod->{type} eq "U");
     next if ($bod->{type} eq "A" and $opt_a == 0);
     next if ($bod->{type} eq "G" and $opt_g == 0);
@@ -193,7 +194,7 @@ sub score_foodw {
     $score += 1;
     $pass_5 = 1;
   }
-  elsif ($size_a->[5] > 95) {
+  elsif ($size_a->[5] >= 95) {
     $score += 1;
     $pass_5 = 1;
   }
@@ -201,18 +202,23 @@ sub score_foodw {
     $score += 1;
     $pass_6 = 1;
   }
-  elsif ($size_a->[6] > 95) {
+  elsif ($size_a->[6] >= 95) {
     $score += 1;
     $pass_6 = 1;
   }
   $skip = 1 unless ($pass_5 + $pass_6);
 
   return $score if $skip;
+  for $num (1..7) {
+    if ($size_a->[$num] >= 95) {
+      $score += 1;
+    }
+  }
   for $num (1,7) {
     if ($size_a->[$num] >= 55 and $size_a->[$num] < 70) {
       $score += 1;
     }
-    elsif ($size_a->[$num] > 95) {
+    elsif ($size_a->[$num] >= 95) {
       $score += 1;
     }
     else {
@@ -223,7 +229,7 @@ sub score_foodw {
   if ($size_a->[8] >= 55 and $size_a->[8] < 70) {
     $score += 1;
   }
-  elsif ($size_a->[8] > 95) {
+  elsif ($size_a->[8] >= 95) {
     $score += 1;
   }
   return $score;
@@ -237,46 +243,56 @@ sub score_system_fp {
 
   unless (defined($sys->{"$star_id"}) ) {
     $sys->{"$star_id"}->{sscore} = "";
-    $sys->{"$star_id"}->{A} = 0;
-    $sys->{"$star_id"}->{G} = 0;
-    $sys->{"$star_id"}->{H} = 0;
-    $sys->{"$star_id"}->{TS} = 0;
-    $sys->{"$star_id"}->{TCS} = 0;
-    $sys->{"$star_id"}->{TYS} = 0;
-    $sys->{"$star_id"}->{TCYS} = 0;
-    $sys->{"$star_id"}->{FW} = 0;
+    $sys->{"$star_id"}->{A} = 0; # Decent Asteroids
+    $sys->{"$star_id"}->{G} = 0; # Decent Gas Giants
+    $sys->{"$star_id"}->{H} = 0; # Decent Habitable
+    $sys->{"$star_id"}->{TS} = 0; # Total size
+    $sys->{"$star_id"}->{TBS} = 0; # Total size
+    $sys->{"$star_id"}->{TCS} = 0; # Total Size of H & G
+    $sys->{"$star_id"}->{TYS} = 0; # Total H & G Orbits 2-6
+    $sys->{"$star_id"}->{TCYS} = 0; # Total H & G, if > min
+    $sys->{"$star_id"}->{FW} = 0; # Threshold scoring
     $sys->{"$star_id"}->{FRNG} = [ (0) x 9 ];
-  }
-  $sys{"$star_id"}->{TYS} += $bod->{bscore};
-  if ($bod->{type} eq "H" or $bod->{type} eq "G") {
-    $sys{"$star_id"}->{TCYS} += $bod->{bscore};
   }
 
   $sys->{"$star_id"}->{FRNG}->[$bod->{orbit}] = $bod->{size};
+
+  $sys->{"$star_id"}->{TS} += $bod->{size};
+  $sys->{"$star_id"}->{TBS} += $bod->{bscore};
+  if ($bod->{type} eq "H" or $bod->{type} eq "G") {
+    $sys->{"$star_id"}->{TCS} += $bod->{size};
+    if ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) {
+      $sys->{"$star_id"}->{TYS} += $bod->{size};
+    }
+  }
 
   if ($bod->{type} eq "H") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
          ($bod->{size} >= MIN_H1)) {
       $sys->{"$star_id"}->{H} += 1;
-      
+      $sys->{"$star_id"}->{TCYS} += $bod->{size}; 
     }
     elsif ( ($bod->{orbit} == 3) and
          ($bod->{size} >= MIN_H3)) {
       $sys->{"$star_id"}->{H} += 1;
+      $sys->{"$star_id"}->{TCYS} += $bod->{size}; 
     }
     elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
          ($bod->{size} >= MIN_H5)) {
       $sys->{"$star_id"}->{H} += 1;
+      $sys->{"$star_id"}->{TCYS} += $bod->{size}; 
     }
   }
   elsif ($bod->{type} eq "G") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
          ($bod->{size} >= MIN_G1)) {
       $sys->{"$star_id"}->{G} += 1;
+      $sys->{"$star_id"}->{TCYS} += $bod->{size}; 
     }
     elsif ( ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) &&
          ($bod->{size} >=  MIN_G5)) {
       $sys->{"$star_id"}->{G} += 1;
+      $sys->{"$star_id"}->{TCYS} += $bod->{size}; 
     }
   }
   elsif ($bod->{type} eq "A") {
@@ -288,22 +304,6 @@ sub score_system_fp {
   else {
     $sys->{"$star_id"}->{A} += 0;
   }
-
-  if ($bod->{type} eq "U") {
-    $sys->{"$star_id"}->{TCS} += 0
-  }
-  elsif ($bod->{type} eq "A" or ($bod->{orbit} == 1 or $bod->{orbit} >= 7)) {
-    if ($bod->{orbit} == 8) {
-      $sys->{"$star_id"}->{TCS} += int($bod->{size}/3+0.5);
-    }
-    else {
-      $sys->{"$star_id"}->{TCS} += int($bod->{size}/2+0.5);
-    }
-  }
-  else {
-    $sys->{"$star_id"}->{TCS} += $bod->{size};
-  }
-  $sys->{"$star_id"}->{TS} += $bod->{size};
 }
 
 sub score_rock {
@@ -412,6 +412,13 @@ sub byscore {
    $b->{bscore} <=> $a->{bscore} ||
    $a->{dist} <=> $b->{dist} ||
    $a->{name} cmp $b->{name};
+}
+
+sub byfw {
+  $sys{"$b->{star_id}"}->{FW}   <=> $sys{"$a->{star_id}"}{FW} ||
+  $sys{"$b->{star_id}"}->{TCYS} <=> $sys{"$a->{star_id}"}{TCYS} ||
+  $sys{"$b->{star_id}"}->{TYS}  <=> $sys{"$a->{star_id}"}{TYS} ||
+  $a->{orbit} <=> $b->{orbit};
 }
 
 sub get_stars {
