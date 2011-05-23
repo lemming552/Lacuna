@@ -16,7 +16,8 @@ use utf8;
   my $help    = 0;
   my $stype;
   my $number = 0;
-  my $slow;
+  my $noreserve = 0;
+  my $time;
 
   GetOptions(
     'planet=s@'  => \@planets,
@@ -25,15 +26,19 @@ use utf8;
     'type=s'    => \$stype,
     'help'      => \$help,
     'number=i'  => \$number,
-    'slow'      => \$slow,
+    'noreserve' => \$noreserve,
+    'time' => \$time,
   );
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $cfg_file,
+    rpc_sleep => 2,
     # debug    => 1,
   );
 
   usage() if $help or scalar @planets == 0 or $stype eq "";
+
+  die "Time arg not functional yet!\n" if ($time);
 
   my @ship_types = ship_types();
 
@@ -72,11 +77,16 @@ use utf8;
     unless (defined($yard_data->{"$planet"}->{"$yard_id"}->{reserve})) {
       $yard_data->{"$planet"}->{"$yard_id"}->{reserve} = 0;
     }
-    $yhash{"$planet"}->{reserve} = $yard_data->{"$planet"}->{"$yard_id"}->{reserve};
+    if ($noreserve) {
+      $yhash{"$planet"}->{reserve} = 0;
+    }
+    else {
+      $yhash{"$planet"}->{reserve} = $yard_data->{"$planet"}->{"$yard_id"}->{reserve};
+    }
 
     print "$planet: $yard_id we hope with a level of ",$yard_data->{"$planet"}->{"$yard_id"}->{level},
           ". Max Queue of ", $yard_data->{"$planet"}->{"$yard_id"}->{maxq},
-          " and reserve of ", $yard_data->{"$planet"}->{"$yard_id"}->{reserve}, "\n";
+          " and reserve of ", $yhash{"$planet"}->{reserve}, "\n";
 
     unless ($yard_data->{"$planet"}->{"$yard_id"}->{level} > 0
             and $yard_data->{"$planet"}->{"$yard_id"}->{name} eq "Shipyard") {
