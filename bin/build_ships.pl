@@ -98,19 +98,23 @@ use utf8;
       }
       if ($yhash->{"$planet"}->{esleep} > 0) {
         $yhash->{"$planet"}->{sloop}->add(seconds => $yhash->{"$planet"}->{esleep});
+#        print "Current Time: ", $check_dt->hms, ": Next Slot: ", $yhash->{"$planet"}->{sloop}->hms,"\n";
         if ( DateTime->compare($yhash->{"$planet"}->{sloop}, $check_dt) ) {
-          my $sleep_sec =
+          my $sleep_num =
             $yhash->{"$planet"}->{sloop} - $check_dt;
-          if ($sleep_sec->in_units('seconds') > 0) {
-            print "sleeping ", $sleep_sec->in_units('seconds'), "\n";
-            sleep $sleep_sec->in_units('seconds');
+          my $sleep_sec = $sleep_num->in_units('hours') * 3600 +
+                          $sleep_num->in_units('minutes') * 60 +
+                          $sleep_num->in_units('seconds');
+          if ($sleep_sec > 0) {
+            print "Sleeping ", $sleep_sec, "\n";
+            sleep ( $sleep_sec);
           }
         }
       }
-      $yhash->{"$planet"}->{sloop} = DateTime->now;
       if (scalar @{$yhash->{"$planet"}->{yards}} > 1) {
         print scalar @{$yhash->{"$planet"}->{yards}}, " Yards on $planet\n";
       }
+      $yhash->{"$planet"}->{sloop} = DateTime->now;
       for my $yard (@{$yhash->{"$planet"}->{yards}} ) {
         print "Yard: $yard->{id} on $planet - ";
         my $bld_result;
@@ -129,6 +133,7 @@ use utf8;
              print " We have $ships_building ships building.\n";
              if ($yard->{bldtime} > $yhash->{"$planet"}->{esleep}) {
                $yhash->{"$planet"}->{esleep} = $yard->{bldtime};
+               $yhash->{"$planet"}->{sloop} = DateTime->now;
              }
            }
            else {
@@ -146,10 +151,11 @@ use utf8;
             sleep(60);
           }
           elsif ($error =~ /1013/) {
-            print " Queue Full: Delaying",
+            print " Queue Full: Delaying ",
                     $yard->{bldtime}," seconds. \n";
              if ($yard->{bldtime} > $yhash->{"$planet"}->{esleep}) {
-               $yhash->{"$planet"}->{esleep} = $yard->{bldtime};
+               $yhash->{"$planet"}->{esleep} = $yard->{bldtime} + 5;
+               $yhash->{"$planet"}->{sloop} = DateTime->now;
              }
           }
           else {
