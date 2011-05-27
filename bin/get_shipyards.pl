@@ -37,8 +37,10 @@ GetOptions(
         delete $bld_data->{"$planet"}->{"$bldid"};
       }
       else {
+        delete $bld_data->{"$planet"}->{"$bldid"}->{work} if ($bld_data->{"$planet"}->{"$bldid"}->{work});
+        delete $bld_data->{"$planet"}->{"$bldid"}->{pending_build} if ($bld_data->{"$planet"}->{"$bldid"}->{pending_build});
         $bld_data->{"$planet"}->{"$bldid"}->{maxq} =
-        $bld_data->{"$planet"}->{"$bldid"}->{level} - 2;
+          $bld_data->{"$planet"}->{"$bldid"}->{level} - 2;
         $bld_data->{"$planet"}->{"$bldid"}->{reserve} = 10;
       }
     }

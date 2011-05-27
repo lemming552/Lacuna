@@ -163,7 +163,7 @@ GetOptions(
            $bod->{zone}, $bod->{water}, $bod->{ore_total};
     for my $ore (sort keys %{$bod->{ore}}) {
       if ($bod->{ore}->{$ore} > 1) {
-        print "\t$ore\t", $bod->{ore}->{$ore};
+        print $ore,"\t", $bod->{ore}->{$ore},"\t";
       }
     }
     print "\n";
