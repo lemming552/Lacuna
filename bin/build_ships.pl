@@ -98,13 +98,13 @@ use utf8;
       }
       if ($yhash->{"$planet"}->{esleep} > 0) {
         $yhash->{"$planet"}->{sloop}->add(seconds => $yhash->{"$planet"}->{esleep});
-#        print "Current Time: ", $check_dt->hms, ": Next Slot: ", $yhash->{"$planet"}->{sloop}->hms,"\n";
+        print "Current Time: ", $check_dt->hms, ": Next Slot: ", $yhash->{"$planet"}->{sloop}->hms,"\n";
         if ( DateTime->compare($yhash->{"$planet"}->{sloop}, $check_dt) ) {
           my $sleep_num =
             $yhash->{"$planet"}->{sloop} - $check_dt;
           my $sleep_sec = $sleep_num->in_units('hours') * 3600 +
                           $sleep_num->in_units('minutes') * 60 +
-                          $sleep_num->in_units('seconds');
+                          $sleep_num->in_units('seconds') + 5;
           if ($sleep_sec > 0) {
             print "Sleeping ", $sleep_sec, "\n";
             sleep ( $sleep_sec);
@@ -132,7 +132,7 @@ use utf8;
              $yhash->{"$planet"}->{keels} < $yhash->{"$planet"}->{bldnum}) {
              print " We have $ships_building ships building.\n";
              if ($yard->{bldtime} > $yhash->{"$planet"}->{esleep}) {
-               $yhash->{"$planet"}->{esleep} = $yard->{bldtime};
+               $yhash->{"$planet"}->{esleep} = $yard->{bldtime} + 5;
                $yhash->{"$planet"}->{sloop} = DateTime->now;
              }
            }
@@ -153,8 +153,9 @@ use utf8;
           elsif ($error =~ /1013/) {
             print " Queue Full: Delaying ",
                     $yard->{bldtime}," seconds. \n";
+             $yhash->{"$planet"}->{esleep} += 5;
              if ($yard->{bldtime} > $yhash->{"$planet"}->{esleep}) {
-               $yhash->{"$planet"}->{esleep} = $yard->{bldtime} + 5;
+               $yhash->{"$planet"}->{esleep} = $yard->{bldtime};
                $yhash->{"$planet"}->{sloop} = DateTime->now;
              }
           }
