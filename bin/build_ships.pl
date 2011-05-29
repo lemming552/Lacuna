@@ -79,46 +79,56 @@ use utf8;
   my $yhash = setup_yhash($ydata, $time, $number, $noreserve, \@planets);
 
   my $not_done = 1;
+  my $resume_dt = DateTime->now;
+  my $sleep_flg = 0;
 
   while ($not_done) {
     my @del_planet;
     $not_done = 0;
+    my $check_dt = DateTime->now;
+    if ($time && $check_dt > $end_dt) {
+      print "Finished Time duration\n";
+      $not_done = 0; last;
+    }
+    if ($sleep_flg && $resume_dt > $check_dt) {
+      my $sleep_num = $resume_dt - $check_dt;
+      my $sleep_sec = $sleep_num->in_units('hours') * 3600 +
+                      $sleep_num->in_units('minutes') * 60 +
+                      $sleep_num->in_units('seconds') + 5;
+      if ($sleep_sec > 0) {
+         print "Sleeping ", $sleep_sec, " seconds\n";
+         sleep ( $sleep_sec);
+      }
+      $sleep_flg = 0;
+    }
+#    else {
+#       print "$sleep_flg : Check: ",$check_dt->hms, ", Resume: ",$resume_dt->hms, "\n";
+#    }
     for my $planet (keys %$yhash) {
       $not_done = 1;
-      if ($yhash->{"$planet"}->{keels} >= $yhash->{"$planet"}->{bldnum}) {
-        print $yhash->{"$planet"}->{keels}," done for $planet\n";
-        push @del_planet, $planet;
-        $not_done = 0;
-        next;
-      }
-      my $check_dt = DateTime->now;
-      if ($time && $check_dt > $end_dt) {
-        print "Finished Time duration\n";
-        $not_done = 0; last;
-      }
-      if ($yhash->{"$planet"}->{esleep} > 0) {
-        $yhash->{"$planet"}->{sloop}->add(seconds => $yhash->{"$planet"}->{esleep});
-        print "Current Time: ", $check_dt->hms, ": Next Slot: ", $yhash->{"$planet"}->{sloop}->hms,"\n";
-        if ( DateTime->compare($yhash->{"$planet"}->{sloop}, $check_dt) ) {
-          my $sleep_num =
-            $yhash->{"$planet"}->{sloop} - $check_dt;
-          my $sleep_sec = $sleep_num->in_units('hours') * 3600 +
-                          $sleep_num->in_units('minutes') * 60 +
-                          $sleep_num->in_units('seconds') + 5;
-          if ($sleep_sec > 0) {
-            print "Sleeping ", $sleep_sec, "\n";
-            sleep ( $sleep_sec);
-          }
-        }
-      }
       if (scalar @{$yhash->{"$planet"}->{yards}} > 1) {
         print scalar @{$yhash->{"$planet"}->{yards}}, " Yards on $planet\n";
       }
-      $yhash->{"$planet"}->{sloop} = DateTime->now;
       for my $yard (@{$yhash->{"$planet"}->{yards}} ) {
+        if ($yhash->{"$planet"}->{keels} >= $yhash->{"$planet"}->{bldnum}) {
+          print $yhash->{"$planet"}->{keels}," done for $planet\n";
+          push @del_planet, $planet;
+          last;
+        }
+        $check_dt = DateTime->now;
         print "Yard: $yard->{id} on $planet - ";
+        if ($yard->{resume} > $check_dt) {
+          my $wait_dur = $yard->{resume} - $check_dt;
+          my $wait_sec = $wait_dur->in_units('hours') * 3600 +
+                         $wait_dur->in_units('minutes') * 60 +
+                         $wait_dur->in_units('seconds') + 5;
+          print "Busy for $wait_sec.\n";
+          $yard->{ysleep} = 1;
+          next;
+        }
         my $bld_result;
         my $ships_building;
+        $yard->{ysleep} = 0;
         my $ok = eval {
            $bld_result = $yard->{yard_pnt}->build_ship($ship_build);
         };
@@ -129,16 +139,18 @@ use utf8;
                  $yhash->{"$planet"}->{bldnum}, " at ", $planet, " ";
           $ships_building = $bld_result->{number_of_ships_building};
           if ($ships_building >= $yard->{maxq} &&
-             $yhash->{"$planet"}->{keels} < $yhash->{"$planet"}->{bldnum}) {
-             print " We have $ships_building ships building.\n";
-             if ($yard->{bldtime} > $yhash->{"$planet"}->{esleep}) {
-               $yhash->{"$planet"}->{esleep} = $yard->{bldtime} + 5;
-               $yhash->{"$planet"}->{sloop} = DateTime->now;
-             }
-           }
-           else {
-             print "\n";
-           }
+            $yhash->{"$planet"}->{keels} < $yhash->{"$planet"}->{bldnum}) {
+            print " We have $ships_building ships building.\n";
+            my $yrd_wait = ($ships_building - $yard->{maxq} + 1) * $yard->{bldtime};
+            $yrd_wait = 60 if $yrd_wait < 60;
+            $yard->{resume} = DateTime->now;
+            $yard->{resume}->add(seconds => $yrd_wait);
+            $yard->{ysleep} = 1;
+            $resume_dt = $yard->{resume};
+          }
+          else {
+            print "\n";
+          }
         }
         else {
           my $error = $@;
@@ -151,13 +163,16 @@ use utf8;
             sleep(60);
           }
           elsif ($error =~ /1013/) {
-            print " Queue Full: Delaying ",
-                    $yard->{bldtime}," seconds. \n";
-             $yhash->{"$planet"}->{esleep} += 5;
-             if ($yard->{bldtime} > $yhash->{"$planet"}->{esleep}) {
-               $yhash->{"$planet"}->{esleep} = $yard->{bldtime};
-               $yhash->{"$planet"}->{sloop} = DateTime->now;
-             }
+            print " Queue Full\n";
+            for my $tyard (@{$yhash->{"$planet"}->{yards}} ) {
+              my $yrd_wait = (10 > $tyard->{maxq} ? 10 : $tyard->{maxq}) * $tyard->{bldtime};
+              $yrd_wait = 60 if $yrd_wait < 60;
+              $tyard->{resume} = DateTime->now;
+              $tyard->{resume}->add(seconds => $yrd_wait);
+              $yard->{ysleep} = 1;
+              $resume_dt = $tyard->{resume};
+            }
+            last; # Next planet
           }
           else {
             print $error, "\n";
@@ -166,8 +181,25 @@ use utf8;
         sleep 2;
       }
     }
-    for my $planet (@del_planet) {
-      delete $yhash->{"$planet"};
+    if ($not_done) {
+      for my $planet (@del_planet) {
+        delete $yhash->{"$planet"};
+      }
+      $sleep_flg = 1;
+#      print "Check: ", $check_dt->hms, "\n";
+      for my $planet (keys %$yhash) {
+        for my $yard (@{$yhash->{"$planet"}->{yards}} ) {
+#          printf "%s %d: f:%s ys:%s %s\n", $planet, $yard->{id}, $sleep_flg,
+#                                           $yard->{ysleep}, $yard->{resume}->hms;
+          if ($yard->{ysleep}) {
+            $resume_dt = $yard->{resume} if $yard->{resume} < $resume_dt;
+          }
+          else {
+            $sleep_flg = 0;
+          }
+        }
+      }
+#      print "Resume: ", $resume_dt->hms, "\n";
     }
   }
   print "$glc->{rpc_count} RPC\n";
@@ -182,14 +214,15 @@ sub setup_yhash {
     $yhash->{"$planet"}->{keels} = 0;
     $yhash->{"$planet"}->{reserve} = 0;
     $yhash->{"$planet"}->{bldnum} = 0;
-    $yhash->{"$planet"}->{esleep} = 0;
 
     for my $yid (keys %{$ydata->{"$planet"}}) {
       next unless $ydata->{"$planet"}->{"$yid"}->{level} > 0;
 
       my $yard = {
-        id => $yid,
-        maxq => 0,
+        id      => $yid,
+        maxq    => 0,
+        resume  => DateTime->now,
+        ysleep  => 0,
       };
       if (defined($ydata->{"$planet"}->{"$yid"}->{maxq})) {
         next unless $ydata->{"$planet"}->{"$yid"}->{maxq} > 0;
