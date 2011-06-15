@@ -8,19 +8,17 @@
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-use YAML;
-use YAML::XS;
-use Data::Dumper;
+use JSON;
 use utf8;
 
 my $home_x;
 my $home_y;
 my $max_dist = 250;
-my $probe_file = "data/probe_data_cmb.yml";
+my $probe_file = "data/probe_data_cmb.js";
 my $star_file   = "data/stars.csv";
-my $planet_file = "data/planet_score.yml";
+my $planet_file = "data/planet_score.js";
 my $planet = '';
-my $zone = '';
+my $sectors = ();
 my $help; my $nodist = 0; my $showprobe = 0;
 
 GetOptions(
@@ -33,7 +31,7 @@ GetOptions(
   'stars=s'      => \$star_file,
   'showprobe'    => \$showprobe,
   'help'         => \$help,
-  'zone=s'       => \$zone,
+  'zone=s@'       => \$sectors,
 );
   
   usage() if ($help);
@@ -41,15 +39,24 @@ GetOptions(
   my $bod;
   my $bodies;
   my $planets;
+  my $json = JSON->new->utf8(1);
   if (-e $probe_file) {
-    $bodies  = YAML::XS::LoadFile($probe_file);
+    my $pf; my $lines;
+    open($pf, "$probe_file") || die "Could not open $probe_file\n";
+    $lines = join("", <$pf>);
+    $bodies = $json->decode($lines);
+    close($pf);
   }
   else {
     print STDERR "$probe_file not found!\n";
     die;
   }
   if (-e "$planet_file") {
-    $planets = YAML::XS::LoadFile($planet_file);
+    my $pf; my $lines;
+    open($pf, "$planet_file") || die "Could not open $planet_file\n";
+    $lines = join("", <$pf>);
+    $planets = $json->decode($lines);
+    close($pf);
   }
   else {
     unless (defined($home_x) and defined($home_y)) {
@@ -63,7 +70,7 @@ GetOptions(
 
   my $stars;
   if (-e "$star_file") {
-    $stars = get_stars("$star_file", $zone);
+    $stars = get_stars("$star_file", $sectors);
   }
   else {
     print STDERR "$star_file not found!\n";
@@ -113,7 +120,7 @@ GetOptions(
 exit;
 
 sub get_stars {
-  my ($sfile, $sector) = @_;
+  my ($sfile, $sectors) = @_;
 
   my $fh;
   open ($fh, "<", "$sfile") or die;
@@ -123,7 +130,7 @@ sub get_stars {
   while(<$fh>) {
     chomp;
     my ($id, $name, $x, $y, $color, $zone) = split(/,/, $_, 6);
-#    next if $zone ne $sector;
+    next if (@{$sectors} and not (grep { $_ eq $zone } @$sectors));
     $star_hash{$id} = {
       id    => $id,
       name  => $name,

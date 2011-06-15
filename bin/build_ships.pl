@@ -116,7 +116,7 @@ use utf8;
           last;
         }
         $check_dt = DateTime->now;
-        print "Yard: $yard->{id} on $planet - ";
+        printf "Yard: %8s on %s - ", $yard->{id}, $planet;
         if ($yard->{resume} > $check_dt) {
           my $wait_dur = $yard->{resume} - $check_dt;
           my $wait_sec = $wait_dur->in_units('hours') * 3600 +
@@ -149,6 +149,12 @@ use utf8;
             $resume_dt = $yard->{resume};
           }
           else {
+            if ($yhash->{"$planet"}->{keels} >= $yhash->{"$planet"}->{bldnum}) {
+              print " ",$yhash->{"$planet"}->{keels}," done for $planet\n";
+              $yard->{ysleep} = 0;
+              push @del_planet, $planet;
+              last;
+            }
             print "\n";
           }
         }
@@ -186,6 +192,11 @@ use utf8;
         delete $yhash->{"$planet"};
       }
       $sleep_flg = 1;
+      if (scalar keys %$yhash < 1) {
+        $sleep_flg = 0;
+        $not_done = 0;
+        last;
+      }
 #      print "Check: ", $check_dt->hms, "\n";
       for my $planet (keys %$yhash) {
         for my $yard (@{$yhash->{"$planet"}->{yards}} ) {

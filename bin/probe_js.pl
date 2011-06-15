@@ -36,6 +36,7 @@ GetOptions(
   my $fh;
   open($fh, ">", "$probe_file") || die "Could not open $probe_file";
 
+# Wrappper
   my $data = $glc->empire->view_species_stats();
 
 # Get planets
@@ -49,6 +50,7 @@ GetOptions(
 # Get obervatories;
   my @observatories;
   for my $pid (keys %$planets) {
+# Wrappper Needed
     my $buildings = $glc->body(id => $pid)->get_buildings()->{buildings};
     push @observatories, grep { $buildings->{$_}->{url} eq '/observatory' } keys %$buildings;
   }
@@ -57,10 +59,12 @@ GetOptions(
   my @stars;
   my @star_bit;
   for my $obs_id (@observatories) {
+# Wrappper
     my $obs_view  = $glc->building( id => $obs_id, type => 'Observatory' )->view();
     my $pages = 1;
     my $num_probed = 0;
     do {
+# Wrappper
       my $obs_probe = $glc->building( id => $obs_id, type => 'Observatory' )->get_probed_stars($pages++);
       $num_probed = $obs_probe->{star_count};
       @star_bit = @{$obs_probe->{stars}};

@@ -137,12 +137,13 @@ GetOptions(
   }
   for my $key (keys %sys) {
     $sys{"$key"}->{sscore} = join(":", $sys{"$key"}->{G}, $sys{"$key"}->{H}, $sys{"$key"}->{A});
+    $sys{"$key"}->{gscore} = join(":", $sys{"$key"}->{G}, $sys{"$key"}->{HA});
     $sys{"$key"}->{FW} = score_foodw($sys{$key}->{FRNG});
   }
   print STDERR scalar keys %sys, " systems and ", scalar @$bodies, " bodies checked.\n";
 
 
-  my @fields = ( "Name", "Sname", "BS", "SS", "TS", "TCS", "TYS", "TCYS", "FW", "O", "Dist",
+  my @fields = ( "Name", "Sname", "BS", "SS", "GG", "TS", "TBS", "TCS", "TYS", "TCYS", "FW", "O", "Dist",
                  "SD", "X", "Y", "Type", "Img","Size", "Own", "Zone", "Water", "Total", "Mineral", "Amt");
   printf "%s\t" x scalar @fields, @fields;
   print "\n";
@@ -155,7 +156,8 @@ GetOptions(
   
     printf "%s\t" x ( scalar @fields - 2),
            $bod->{name}, $bod->{star_name}, $bod->{bscore},
-           $sys{"$bod->{star_id}"}->{sscore}, $sys{"$bod->{star_id}"}->{TS},
+           $sys{"$bod->{star_id}"}->{sscore}, $sys{"$bod->{star_id}"}->{gscore}, 
+           $sys{"$bod->{star_id}"}->{TS}, $sys{"$bod->{star_id}"}->{TBS},
            $sys{"$bod->{star_id}"}->{TCS}, $sys{"$bod->{star_id}"}->{TYS},
            $sys{"$bod->{star_id}"}->{TCYS}, $sys{"$bod->{star_id}"}->{FW},
            $bod->{orbit}, $bod->{dist}, $bod->{sdist}, $bod->{x}, $bod->{y},
@@ -246,8 +248,9 @@ sub score_system_fp {
     $sys->{"$star_id"}->{A} = 0; # Decent Asteroids
     $sys->{"$star_id"}->{G} = 0; # Decent Gas Giants
     $sys->{"$star_id"}->{H} = 0; # Decent Habitable
+    $sys->{"$star_id"}->{HA} = 0; # Looking for right size Gas Giants, plan to Blackhole the rest
     $sys->{"$star_id"}->{TS} = 0; # Total size
-    $sys->{"$star_id"}->{TBS} = 0; # Total size
+    $sys->{"$star_id"}->{TBS} = 0; # Total Base score
     $sys->{"$star_id"}->{TCS} = 0; # Total Size of H & G
     $sys->{"$star_id"}->{TYS} = 0; # Total H & G Orbits 2-6
     $sys->{"$star_id"}->{TCYS} = 0; # Total H & G, if > min
@@ -259,6 +262,7 @@ sub score_system_fp {
 
   $sys->{"$star_id"}->{TS} += $bod->{size};
   $sys->{"$star_id"}->{TBS} += $bod->{bscore};
+
   if ($bod->{type} eq "H" or $bod->{type} eq "G") {
     $sys->{"$star_id"}->{TCS} += $bod->{size};
     if ($bod->{orbit} >= 2 and $bod->{orbit} <= 6) {
@@ -282,6 +286,7 @@ sub score_system_fp {
       $sys->{"$star_id"}->{H} += 1;
       $sys->{"$star_id"}->{TCYS} += $bod->{size}; 
     }
+    $sys->{"$star_id"}->{HA} += 1;
   }
   elsif ($bod->{type} eq "G") {
     if ( ($bod->{orbit} == 1 or $bod->{orbit} == 7) &&
@@ -300,6 +305,7 @@ sub score_system_fp {
     if ( $ascore > MIN_A) {
       $sys->{"$star_id"}->{A} += 1;
     }
+    $sys->{"$star_id"}->{HA} += 1;
   }
   else {
     $sys->{"$star_id"}->{A} += 0;
