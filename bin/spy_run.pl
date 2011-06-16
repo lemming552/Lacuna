@@ -7,6 +7,10 @@ use List::Util            qw( first );
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client ();
+use JSON;
+use DateTime;
+use Date::Parse;
+use Date::Format;
 
   my $planet_name;
   my $target;
@@ -16,6 +20,9 @@ use Games::Lacuna::Client ();
   my $max_off = 10000;
   my $max_def = 10000;
   my $number  = 10000;
+  my $random_bit = int rand 9999;
+  my $dumpfile = "log/spyrun_".time2str('%Y-%m-%dT%H:%M:%S%z', time).
+                      "_$random_bit.js";
 
   GetOptions(
     'from=s'       => \$planet_name,
@@ -46,9 +53,14 @@ use Games::Lacuna::Client ();
     }
   }
 
+  my $json = JSON->new->utf8(1);
+  my $df;
+  open($df, ">", "$dumpfile") or die "Could not open $dumpfile\n";
+
   my $client = Games::Lacuna::Client->new(
                  cfg_file => $cfg_file,
                  prompt_captcha => 1,
+                 rpc_sleep => 2,
                  # debug    => 1,
                );
 
@@ -66,14 +78,24 @@ use Games::Lacuna::Client ();
        } keys %$buildings;
 
   my $intel = $client->building( id => $intel_id, type => 'Intelligence' );
-  my @spies;
 
-  for my $spy ( @{ $intel->view_spies->{spies} } ) {
+  my (@spies, $page, $done);
+
+  while(!$done) {
+    my $spies = $intel->view_spies(++$page);
+    push @spies, @{$spies->{spies}};
+    $done = 25 * $page >= $spies->{spy_count};
+  }
+
+  print scalar @spies," spies found from $planet_name\n";
+  my @trim_spies;
+  for my $spy ( @spies ) {
+    next if lc( $spy->{assigned_to}{name} ) ne lc( $target );
+    next unless ($spy->{is_available});
     next unless ($spy->{offense_rating} >= $min_off and
                  $spy->{offense_rating} <= $max_off and
                  $spy->{defense_rating} >= $min_off and
                  $spy->{defense_rating} <= $max_off);
-    next if lc( $spy->{assigned_to}{name} ) ne lc( $target );
     
     my @missions = grep {
         $_->{task} =~ /^$assignment/i
@@ -91,11 +113,15 @@ use Games::Lacuna::Client ();
     
     $assignment = $missions[0]->{task};
     
-    push @spies, $spy;
+    push @trim_spies, $spy;
   }
+  print scalar @trim_spies," spies available at $target.\n";
+
+  print $df $json->pretty->canonical->encode(\@trim_spies);
+  close $df;
 
   my $spy_run = 0;
-  for my $spy (@spies) {
+  for my $spy (@trim_spies) {
     my $return;
     
     eval {
@@ -107,8 +133,9 @@ use Games::Lacuna::Client ();
     }
     
     $spy_run++;
-    printf "%3d %s\n\t%s\n",
+    printf "%3d %s %s %s\n",
         $spy_run,
+        $spy->{name},
         $return->{mission}{result},
         $return->{mission}{reason};
     last if $spy_run >= $number;
