@@ -75,7 +75,10 @@ use Date::Format;
 
   my $intel_id = first {
          $buildings->{$_}->{url} eq '/intelligence'
-       } keys %$buildings;
+       }
+       grep { $buildings->{$_}->{level} > 0 and $buildings->{$_}->{efficiency} == 100 }
+       keys %$buildings;
+
 
   my $intel = $client->building( id => $intel_id, type => 'Intelligence' );
 

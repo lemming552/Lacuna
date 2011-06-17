@@ -26,7 +26,7 @@ use utf8;
     config       => "lacuna.yml",
     probefile    => "data/probe_data_cmb.js",
     dumpfile     => $log_dir . '/spy_fetch'.
-                      time2str('%Y-%m-%dT%H:%M:%S%z', time).
+                      time2str('%Y%m%dT%H%M%S%z', time).
                       "-$random_bit.js",
     min_def  => 0,
     min_off  => 0,
@@ -99,29 +99,36 @@ use utf8;
   my @spies;
   my @ships;
 
-  my $space_port;
   my $planet    = $glc->body( id => $dest_id );
   my $result    = $planet->get_buildings;
   my $buildings = $result->{buildings};
 
   my $space_port_id = List::Util::first {
-          $buildings->{$_}->{name} eq 'Space Port'
+          $buildings->{$_}->{url} eq '/spaceport'
+  }
+  grep { $buildings->{$_}->{level} > 0 and $buildings->{$_}->{efficiency} == 100 }
+  keys %$buildings;
+
+  my $intel_id = List::Util::first {
+          $buildings->{$_}->{url} eq '/intelligence'
   }
   grep { $buildings->{$_}->{level} > 0 and $buildings->{$_}->{efficiency} == 100 }
   keys %$buildings;
 
   die "No space port found on $opts{dest}\n" unless $space_port_id;
+  die "No space port found on $opts{dest}\n" unless $intel_id;
 
   print "Getting spies and ships from $opts{dest}\n";
 
-  $space_port = $glc->building( id => $space_port_id, type => 'SpacePort' );
+  my $space_port = $glc->building( id => $space_port_id, type => 'SpacePort' );
+  my $intel      = $glc->building( id => $intel_id, type => 'Intelligence' );
 
   my $prep;
   my $ok = eval {
     $prep = $space_port->prepare_fetch_spies( $from_id, $dest_id);
   };
   if ($ok) {
-    @spies = @{$prep->{spies}};
+#    @spies = @{$prep->{spies}};
     @ships = @{$prep->{ships}};
   }
   else {
@@ -129,7 +136,18 @@ use utf8;
     die $error,"\n";
   }
 
+  my ($page, $done);
+
+  while(!$done) {
+    my $spies = $intel->view_spies(++$page);
+    push @spies, @{$spies->{spies}};
+    $done = 25 * $page >= $spies->{spy_count};
+  }
+
   print scalar @spies, " spies found.\n";
+  @spies = grep { lc ($_->{assigned_to}{name}) eq lc($opts{from}) and
+                  $_->{is_available} } @spies;
+  print scalar @spies, " on $opts{from}.\n";
   my @spy_ids = map { $_->{id} }
                 grep { $_->{offense_rating} >= $opts{min_off} and
                        $_->{offense_rating} <= $opts{max_off} and
