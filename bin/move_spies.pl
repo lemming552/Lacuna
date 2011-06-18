@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 #
-#
+# Script for sending and fetching spies.
+# Will use spaceport method as default which is cheaper RPC wise, but
+# can only send/fetch 100 spies at most.  If intel method is used, as many
+# spies as can fit in a ship can be moved.
+# Currently, we use probe data to determine body ids, however adding
+# the ability to use the body id wouldn't be difficult.
 #
 use strict;
 use warnings;
