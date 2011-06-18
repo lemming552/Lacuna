@@ -1,5 +1,7 @@
 #!/usr/bin/perl
-
+# RPC, Captcha awareness added.
+# Minimum and Maximum spy ratings added as well so you don't risk low rated spies first.
+#
 use strict;
 use warnings;
 use Getopt::Long          qw(GetOptions);
