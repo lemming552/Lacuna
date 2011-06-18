@@ -134,10 +134,13 @@ sub merge_probe {
     $orig->{observatory}->{stime} = $data->{observatory}->{stime};
     $orig->{observatory}->{ststr} = $data->{observatory}->{ststr};
     if ($data_e ne '') {
-      $orig->{empire}->{alignment}       = $data->{empire}->{alignment};
-      $orig->{empire}->{id}              = $data->{empire}->{id};
-      $orig->{empire}->{is_isolationist} = $data->{empire}->{is_isolationist};
-      $orig->{empire}->{name}            = $data->{empire}->{name};
+      unless (cmp_emp($orig, $data)) {
+        print "Empire Info update for $orig->{name}\n";
+        $orig->{empire}->{alignment}       = $data->{empire}->{alignment};
+        $orig->{empire}->{id}              = $data->{empire}->{id};
+        $orig->{empire}->{is_isolationist} = $data->{empire}->{is_isolationist};
+        $orig->{empire}->{name}            = $data->{empire}->{name};
+      }
     }
     my $new_own = ownership_test($orig, $orig_e);
     unless (defined($checked{"$orig->{star_id}"})) {
@@ -195,6 +198,20 @@ sub merge_probe {
     $orig = copy_body($orig, $data);
   }
   return $orig;
+}
+
+sub cmp_emp {
+  my ($orig, $data) = @_;
+
+  my $str1 = join(":", $orig->{empire}->{alignment}, $orig->{empire}->{id},
+                       $orig->{empire}->{is_isolationist}, $orig->{empire}->{name});
+  my $str2 = join(":", $data->{empire}->{alignment}, $data->{empire}->{id},
+                       $data->{empire}->{is_isolationist}, $data->{empire}->{name});
+
+  if ($str1 eq $str2) {
+    return 1;
+  }
+  return 0;
 }
 
 sub copy_body {

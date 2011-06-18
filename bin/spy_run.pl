@@ -151,6 +151,11 @@ Usage: $0 CONFIG_FILE
     --from       PLANET
     --target     PLANET
     --assignment MISSION
+    --min_def    Minimum Defense Rating
+    --min_off    Minimum Offense Rating
+    --max_def    Maximum Defense Rating
+    --max_off    Maximum Offense Rating
+    --number     Number of Agents to use
 
 CONFIG_FILE  defaults to 'lacuna.yml'
 

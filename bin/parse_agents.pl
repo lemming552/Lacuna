@@ -9,7 +9,7 @@ use JSON;
 use Data::Dumper;
 use utf8;
 
-my $data_file = "data/data_agents.js";
+my $data_file = "log/spy_data.js";
 my $help = 0;
 
 GetOptions(
