@@ -30,9 +30,9 @@ use utf8;
     v            => 0,
     config       => "lacuna.yml",
     probefile    => "data/probe_data_cmb.js",
-    dumpfile     => $log_dir . '/spy_fetch'.
+    dumpfile     => $log_dir . '/spy_move_'.
                       time2str('%Y%m%dT%H%M%S%z', time).
-                      "-$random_bit.js",
+                      "_$random_bit.js",
     min_def  => 0,
     min_off  => 0,
     max_def  => 10000,
@@ -50,7 +50,7 @@ use utf8;
     'to=s',
     'id',
     'intel',
-    'send',
+    'fetch',
     'sname=s',
     'stype=s',
     'min_def=i',
@@ -120,14 +120,8 @@ use utf8;
   my $spy_planet_name;
   my $dirstr;
   my $send;
-  if ( $opts{send} ) {
+  if ( $opts{fetch} ) {
     die "Must own $from_name to be able to send from!\n" unless ($from_own);
-    $spy_planet_id = $from_id;
-    $spy_planet_name = $from_name;
-    $send = 1;
-    $dirstr = "Sending";
-  }
-  elsif ($to_own) {
     $spy_planet_id = $to_id;
     $spy_planet_name = $to_name;
     $send = 0;
@@ -138,6 +132,12 @@ use utf8;
     $spy_planet_name = $from_name;
     $send = 1;
     $dirstr = "Sending";
+  }
+  elsif ($to_own) {
+    $spy_planet_id = $to_id;
+    $spy_planet_name = $to_name;
+    $send = 0;
+    $dirstr = "Fetching";
   }
   else {
     die "Could not figure out send/fetch syntax!\n";
@@ -180,6 +180,9 @@ use utf8;
   else {
     @spies = @{$prep->{spies}};
     print scalar @spies, " spies found available from $from_name.\n";
+  }
+  unless (@spies) {
+    die "No spies to $dirstr!\n";
   }
 
   my @spy_ids = map { $_->{id} }

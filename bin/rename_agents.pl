@@ -111,6 +111,7 @@ use Exception::Class;
           }
         }
       }
+      print scalar @spies, " found from $planet_name.\n";
       print OUTPUT $json->pretty->canonical->encode(\@spies);
       unless ($opts{all}) {
         for my $spy_r (@spies) {
@@ -161,13 +162,13 @@ use Exception::Class;
           $sleep_flg = 1;
         }
         if ($spy_name ne $new_name) {
-          print "$spy_name is now $new_name - $task\n";
+          print "$spy_name is now $new_name - $task on $cplanet.\n";
         }
         elsif ($result) {
-          print "$spy_name is now doing $task\n";
+          print "$spy_name is now doing $task on $cplanet.\n";
         }
         else {
-          print "$spy_name continues $task\n";
+          print "$spy_name continues $task on $cplanet.\n";
         }
         sleep 2 if $sleep_flg;
       }

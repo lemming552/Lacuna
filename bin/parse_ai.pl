@@ -127,7 +127,7 @@ sub read_ai {
     next if ($diab == 0 && $dref->{race} eq "Diablotin");
     next if ($sab == 0 && $dref->{race} =~ /Demesne/);
     next if ($trel == 0 && $dref->{race} =~ /Trelvestian/);
-    next if ($active && $dref->{status} ne "Active");
+    next if ($active && ($dref->{status} ne "Active" and $dref->{status} ne "Homeworld"));
      
     $dref->{dist} = sprintf("%.2f", sqrt(($home_x - $dref->{x})**2 + ($home_y - $dref->{y})**2));
     if ($dref->{dist} <= $max_dist) {
