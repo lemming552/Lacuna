@@ -11,7 +11,7 @@ use utf8;
   my %opts = (
     h        => 0,
     v        => 0,
-    input     => $log_dir . '/shuffle_plans.js',
+    input     => $log_dir . '/sift_plans.js',
   );
 
   GetOptions(\%opts,
@@ -88,7 +88,7 @@ Usage: $0 --feedfile file
 Options:
   --help            - Prints this out
   --verbose         - Print more details.
-  --input  shuffle  - Where to get data
+  --input  sift  - Where to get data
 END
  exit 1;
 }

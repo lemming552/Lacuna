@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# For all your plan shuffling needs
+# For all your plan sifting needs
 use strict;
 use warnings;
 use FindBin;
@@ -22,7 +22,7 @@ use utf8;
     h            => 0,
     v            => 0,
     config       => "lacuna.yml",
-    dumpfile     => $log_dir . '/shuffle_plans.js',
+    dumpfile     => $log_dir . '/sift_plans.js',
     min_plus     => 0,
     max_plus     => 29,
     min_base     => 1,
@@ -384,6 +384,11 @@ sub return_types {
     "Gas Giant Settlement Platform",
     "Halls of Vrbansk",
     "Subspace Supply Depot",
+    "Junk Henge Sculpture",
+    "Metal Junk Arches",
+    "Great Ball of Junk",
+    "Space Junk Park",
+    "Pyramid Junk Sculpture",
    ];
 
   $plan_types{plus} = [
