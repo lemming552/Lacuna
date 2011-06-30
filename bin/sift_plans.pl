@@ -167,6 +167,9 @@ use utf8;
       exit;
     }
   }
+  else {
+#Pick fastest ship that can hold plans
+  }
 
   my @items = 
     map {
@@ -423,7 +426,7 @@ sub return_types {
   $plan_types{station} = [
     "Art Museum",
     "Culinary Institute",
-    "Insterstellar Broadcast System",
+    "Interstellar Broadcast System",
     "Opera House",
     "Parliament",
     "Police Station",
