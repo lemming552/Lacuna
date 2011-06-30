@@ -48,6 +48,7 @@ use utf8;
     'city',
     'decor',
     'station',
+    'standard',  # (Equiv of not city, station, glyph, or decor)
     'interest', # Highly subjective
     'crap', # Also Subjective
     'all',
@@ -231,7 +232,8 @@ sub grab_plans {
   my $plan;
   my %plans;
   if ( $opts{city} or $opts{decor} or $opts{glyph} or
-       $opts{station} or $opts{interest} or $opts{crap}) {
+       $opts{station} or $opts{interest} or $opts{crap} or
+       $opts{standard}) {
     if ($opts{city}) {
       my $slice = yoink($plans, $plan_types, "city" );
       for my $sl (@$slice) {
@@ -260,6 +262,17 @@ sub grab_plans {
       my $slice = inter($plans, $plan_types );
       for my $sl (@$slice) {
         $plans{$sl->{id}} = $sl;
+      }
+    }
+    if ($opts{standard}) {
+      my $slice = yoink($plans, $plan_types, "city" );
+      push @$slice, @{ yoink($plans, $plan_types, "station" )};
+      push @$slice, @{ yoink($plans, $plan_types, "glyph" )};
+      push @$slice, @{ yoink($plans, $plan_types, "any" )};
+      push @$slice, @{ yoink($plans, $plan_types, "plus" )};
+      push @$slice, @{ yoink($plans, $plan_types, "decor" )};
+      for my $sl (@$plans) {
+        $plans{$sl->{id}} = $sl unless ( grep { $sl->{id} eq $_->{id} } @$slice );
       }
     }
     if ($opts{crap}) {
@@ -476,6 +489,7 @@ Usage: $0 --to PLANET --from PLANET
        --max_base   Maximum Base for plans to move
        --decor      Grab Decor plans
        --station    Grab Space Station Plans
+       --standard   Grab all "standard" building plans
        --interest   Grab all interesting Plans (subjective)
        --crap       Grab all crappy Plans (subjective)  (opposite of interest)
        --unique     Just grab one of each plan.  (Usually pulling a glyph set for sale)

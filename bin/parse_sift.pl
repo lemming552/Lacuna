@@ -71,6 +71,7 @@ sub get_json {
     my $fh; my $lines;
     open($fh, "$file") || die "Could not open $file\n";
     $lines = join("", <$fh>);
+    return 0 unless ($lines);
     my $data = $json->decode($lines);
     close($fh);
     return $data;
