@@ -43,13 +43,11 @@ use Exception::Class;
   );
 
   my $json = JSON->new->utf8(1);
-  $json = $json->pretty([1]);
-  $json = $json->canonical([1]);
-  my $nf; my $lines;
-  open($nf, "$opts{'names'}") || die "Could not open $opts{'names'}\n";
-  $lines = join("", <$nf>);
-  my $anames = $json->decode($lines);
-  close($nf);
+
+  my $anames = get_json($opts{names});
+  unless ($anames) {
+    $anames = {};
+  }
 
   open(OUTPUT, ">", $opts{'dumpfile'}) || die "Could not open $opts{'dumpfile'}";
 
@@ -67,15 +65,18 @@ use Exception::Class;
   }
 
 # Get Intelligence Ministries
-  for my $planet_name (sort keys %planets) {
-    next if ($opts{planet} and not (grep { $planet_name eq $_ } @{$opts{planet}}));
-    print "On $planet_name\n";
+  for my $pname (sort keys %planets) {
+    next if ($opts{planet} and not (grep { $pname eq $_ } @{$opts{planet}}));
+    print "On $pname\n";
 
-    my $planet    = $glc->body( id => $planets{$planet_name} );
+    my $planet    = $glc->body( id => $planets{$pname} );
     my $result    = $planet->get_buildings;
     my $buildings = $result->{buildings};
 
-    $anames->{$planet_name} = () unless (defined($anames->{$planet_name}));
+    unless (defined($anames->{$pname})) {
+      $anames->{$pname}->{init} = '';
+      $anames->{$pname}->{name} = ();
+    }
 
     my @b = grep { $buildings->{$_}->{url} eq '/intelligence' } keys %$buildings;
     my @ints;
@@ -83,10 +84,10 @@ use Exception::Class;
 
     my $int_id = $ints[0];
     unless ($int_id) {
-      verbose("No Intelligence Ministry on $planet_name\n");
+      verbose("No Intelligence Ministry on $pname\n");
     }
     else {
-      verbose("Found Intelligence Ministry on $planet_name\n");
+      verbose("Found Intelligence Ministry on $pname\n");
       my (@spies, $page, $done);
       $page = 1;
       while (!$done) {
@@ -111,11 +112,12 @@ use Exception::Class;
           }
         }
       }
-      print scalar @spies, " found from $planet_name.\n";
+      print scalar @spies, " found from $pname.\n";
       print OUTPUT $json->pretty->canonical->encode(\@spies);
       unless ($opts{all}) {
         for my $spy_r (@spies) {
-          @{$anames->{$planet_name}} = grep { $_ ne $spy_r->{name} } @{$anames->{$planet_name}};
+          @{$anames->{$pname}->{name}} =
+            grep { $_ ne $spy_r->{name} } @{$anames->{$pname}->{name}};
         }
       }
       for my $spy_r ( @spies ) {
@@ -124,11 +126,11 @@ use Exception::Class;
         my $spy_name = $spy_r->{'name'};
         my $new_name = $spy_name;
         if ($opts{all} or $spy_name =~ /agent/i or
-            lc(substr($spy_name,0,1)) ne lc(substr($planet_name,0,1))) {
+            lc(substr($spy_name,0,1)) ne lc($anames->{$pname}->{init})) {
           $new_name =
-             splice(@{$anames->{$planet_name}}, rand(@{$anames->{$planet_name}}), 1);
+             splice(@{$anames->{$pname}->{name}}, rand(@{$anames->{$pname}->{name}}), 1);
           if (!$new_name or length($new_name) < 3) {
-            $new_name = "Agent ".$spy_id;
+            $new_name = "Agent ".$anames->{$pname}->{init}.$spy_id;
           }
           if ($spy_name ne $new_name) {
             my $ok;
@@ -155,20 +157,21 @@ use Exception::Class;
         }
         my $task = $spy_r->{'assignment'};
         my $cplanet = $spy_r->{assigned_to}{name};
+        my $loffdef = sprintf("(%d/%d/%d)", $spy_r->{level}, $spy_r->{offense_rating}, $spy_r->{defense_rating});
         my $result = "";
-        if ($opts{counter} and $cplanet eq $planet_name and $task eq "Idle") {
+        if ($opts{counter} and $cplanet eq $pname and $task eq "Idle") {
           $result = $int_id->assign_spy($spy_id, "Counter Espionage");
           $task = "Counter ".$result->{'mission'}->{'result'};
           $sleep_flg = 1;
         }
         if ($spy_name ne $new_name) {
-          print "$spy_name is now $new_name - $task on $cplanet.\n";
+          print "$spy_name is now $new_name - $loffdef - $task on $cplanet.\n";
         }
         elsif ($result) {
-          print "$spy_name is now doing $task on $cplanet.\n";
+          print "$spy_name $loffdef is now doing $task on $cplanet.\n";
         }
         else {
-          print "$spy_name continues $task on $cplanet.\n";
+          print "$spy_name  $loffdef continues $task on $cplanet.\n";
         }
         sleep 2 if $sleep_flg;
       }
@@ -176,6 +179,23 @@ use Exception::Class;
   }
   undef $glc;
 exit;
+
+sub get_json {
+  my ($file) = @_;
+
+  if (-e $file) {
+    my $fh; my $lines;
+    open($fh, "$file") || die "Could not open $file\n";
+    $lines = join("", <$fh>);
+    my $data = $json->decode($lines);
+    close($fh);
+    return $data;
+  }
+  else {
+    warn "$file not found!\n";
+  }
+  return 0;
+}
 
 
 sub usage {
@@ -214,11 +234,11 @@ sub diag {
 }
 
 sub normalize_planet {
-    my ($planet_name) = @_;
+    my ($pname) = @_;
 
-    $planet_name =~ s/\W//g;
-    $planet_name = lc($planet_name);
-    return $planet_name;
+    $pname =~ s/\W//g;
+    $pname = lc($pname);
+    return $pname;
 }
 
 sub find_int {
