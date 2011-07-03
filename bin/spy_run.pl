@@ -23,11 +23,15 @@ use Date::Format;
   my $max_def = 10000;
   my $number  = 10000;
   my $random_bit = int rand 9999;
-  my $dumpfile = "log/spyrun_".time2str('%Y-%m-%dT%H:%M:%S%z', time).
+  my $dumpfile = "log/spy_run_".time2str('%Y%m%dT%H%M%S%z', time).
                       "_$random_bit.js";
+  my $fail_break = 3;
+  my $fail = 0;
 
   GetOptions(
     'from=s'       => \$planet_name,
+    'fail_break=i' => \$fail_break,
+    'dumpfile=s'  => \$dumpfile,
     'target=s'     => \$target,
     'assignment=s' => \$assignment,
     'min_off=i'    => \$min_off,
@@ -59,7 +63,7 @@ use Date::Format;
   my $df;
   open($df, ">", "$dumpfile") or die "Could not open $dumpfile\n";
 
-  my $client = Games::Lacuna::Client->new(
+  my $glc = Games::Lacuna::Client->new(
                  cfg_file => $cfg_file,
                  prompt_captcha => 1,
                  rpc_sleep => 2,
@@ -67,12 +71,15 @@ use Date::Format;
                );
 
 # Load the planets
-  my $empire  = $client->empire->get_status->{empire};
+  my $empire  = $glc->empire->get_status->{empire};
+
+  my $rpc_cnt_beg = $glc->{rpc_count};
+  print "RPC Count of $rpc_cnt_beg\n";
 
 # reverse hash, to key by name instead of id
   my %planets = reverse %{ $empire->{planets} };
 
-  my $body      = $client->body( id => $planets{$planet_name} );
+  my $body      = $glc->body( id => $planets{$planet_name} );
   my $buildings = $body->get_buildings->{buildings};
 
   my $intel_id = first {
@@ -82,51 +89,51 @@ use Date::Format;
        keys %$buildings;
 
 
-  my $intel = $client->building( id => $intel_id, type => 'Intelligence' );
+  my $intel = $glc->building( id => $intel_id, type => 'Intelligence' );
 
   my (@spies, $page, $done);
 
   while(!$done) {
     my $spies = $intel->view_spies(++$page);
-    push @spies, @{$spies->{spies}};
-    $done = 25 * $page >= $spies->{spy_count};
-  }
-
-  print scalar @spies," spies found from $planet_name\n";
-  my @trim_spies;
-  for my $spy ( @spies ) {
-    next if lc( $spy->{assigned_to}{name} ) ne lc( $target );
-    next unless ($spy->{is_available});
-    next unless ($spy->{offense_rating} >= $min_off and
-                 $spy->{offense_rating} <= $max_off and
-                 $spy->{defense_rating} >= $min_off and
-                 $spy->{defense_rating} <= $max_off);
-    
-    my @missions = grep {
-        $_->{task} =~ /^$assignment/i
-    } @{ $spy->{possible_assignments} };
-    
-    next if !@missions;
-    
-    if ( @missions > 1 ) {
+    my @trim_spies;
+    for my $spy (@{$spies->{spies}}) {
+      next if lc( $spy->{assigned_to}{name} ) ne lc( $target );
+      next unless ($spy->{is_available});
+      next unless ($spy->{offense_rating} >= $min_off and
+                   $spy->{offense_rating} <= $max_off and
+                   $spy->{defense_rating} >= $min_def and
+                   $spy->{defense_rating} <= $max_def);
+      my @missions = grep {
+          $_->{task} =~ /^$assignment/i
+      } @{ $spy->{possible_assignments} };
+      next if !@missions;
+      if ( @missions > 1 ) {
         warn "Supplied --assignment matches multiple possible assignments - skipping!\n";
         for my $mission (@missions) {
           warn sprintf "\tmatches: %s\n", $mission->{task};
         }
         last;
+      }
+      $assignment = $missions[0]->{task};
+      push @trim_spies, $spy;
     }
-    
-    $assignment = $missions[0]->{task};
-    
-    push @trim_spies, $spy;
+    push @spies, @trim_spies;
+    $done = (25 * $page >= $spies->{spy_count} or @spies > $number);
   }
-  print scalar @trim_spies," spies available at $target.\n";
 
-  print $df $json->pretty->canonical->encode(\@trim_spies);
+  print scalar @spies," spies found from $planet_name available.";
+  if (@spies >= $number) {
+    print " Only scanned thru first ",$page * 25, " spies.\n";
+  }
+  else {
+    print "\n";
+  }
+
+  print $df $json->pretty->canonical->encode(\@spies);
   close $df;
 
   my $spy_run = 0;
-  for my $spy (@trim_spies) {
+  for my $spy (@spies) {
     my $return;
     
     eval {
@@ -143,8 +150,14 @@ use Date::Format;
         $spy->{name},
         $return->{mission}{result},
         $return->{mission}{reason};
+    $fail++ if $return->{mission}{result} eq 'Failure';
+    last if $fail_break && $fail >= $fail_break;
     last if $spy_run >= $number;
   }
+  my $rpc_cnt_end = $glc->{rpc_count};
+  print "RPC Count start: $rpc_cnt_beg\n";
+  print "RPC Count final: $rpc_cnt_end\n";
+  undef $glc;
 exit;
 
 sub usage {
