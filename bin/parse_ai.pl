@@ -67,15 +67,20 @@ sub compare {
   my ($cmp, $ais, $max_name) = @_;
 
   my %compare = map { $_->{name} => $_ } @$cmp;
+  my %ai_list = map { $_->{name} => $_ } @$ais;
 
   printf "%${max_name}s %6s %6s %7s %15s %s\n", "Name", "x", "y", "Dist", "Race", "Status";
   for my $ai (@$ais) {
     next if $ai->{status} ne "Active";
     unless (defined($compare{"$ai->{name}"})) {
       $ai->{race} = "Saben" if ($ai->{race} =~ /Demesne/);
-      printf "%${max_name}s %6d %6d %7.2f %-15s %s\n", $ai->{name}, $ai->{x}, $ai->{y},
+      printf "%${max_name}s %6d %6d %7.2f %-15s %s Gone\n", $ai->{name}, $ai->{x}, $ai->{y},
                                            $ai->{dist}, substr($ai->{race},0,15), $ai->{status};
     }
+  }
+  for my $cmp ( @$cmp) {
+    next if defined($ai_list{"$cmp->{name}"});
+    printf "%${max_name}s %6d %6d  New\n", $cmp->{name}, $cmp->{x}, $cmp->{y};
   }
 }
 
@@ -127,7 +132,10 @@ sub read_ai {
     next if ($diab == 0 && $dref->{race} eq "Diablotin");
     next if ($sab == 0 && $dref->{race} =~ /Demesne/);
     next if ($trel == 0 && $dref->{race} =~ /Trelvestian/);
-    next if ($active && ($dref->{status} ne "Active" and $dref->{status} ne "Homeworld"));
+    next if ($active &&
+             ($dref->{status} ne "Active" and
+              $dref->{status} ne "Tournament" and
+              $dref->{status} ne "Homeworld"));
      
     $dref->{dist} = sprintf("%.2f", sqrt(($home_x - $dref->{x})**2 + ($home_y - $dref->{y})**2));
     if ($dref->{dist} <= $max_dist) {
