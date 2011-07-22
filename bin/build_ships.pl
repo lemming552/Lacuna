@@ -165,6 +165,10 @@ use utf8;
             push @del_planet, $planet;
           }
           elsif ($error =~ /1010/) {
+            if ($error =~ /You have already made the maximum number of requests/) {
+              print "Out of RPCs for the day, take a walk.\n";
+              $not_done = 0; last;
+            }
             print $error, " taking a minute off.\n";
             sleep(60);
           }
@@ -214,6 +218,7 @@ use utf8;
     }
   }
   print "$glc->{rpc_count} RPC\n";
+  undef $glc;
 exit;
 
 sub setup_yhash {
@@ -329,6 +334,7 @@ sub ship_types {
 
   my @shiptypes = (qw(
         barge
+        bleeder
         cargo_ship
         colony_ship
         detonator

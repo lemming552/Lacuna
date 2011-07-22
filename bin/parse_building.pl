@@ -28,8 +28,10 @@ GetOptions(
   my $lines = join("",<BLDS>);
   my $bld_data = $json->decode($lines);
   close(BLDS);
+#  print $json->pretty->encode($bld_data->{Oslo});
 
-# print "Name,lvl,fc,oc,wc,ec,gc,fhr,ohr,whr,ehr,ghr,hhr,fc,oc,wc,ec,gc\n";
+
+  print "Planet,Name,lvl,x,y,lvl2b,bldid\n";
   for my $planet (sort keys %$bld_data) {
     next if $planet eq "planets";
     for my $bldid (keys %{$bld_data->{"$planet"}}) {
@@ -39,6 +41,7 @@ GetOptions(
           $bld_data->{"$planet"}->{"$bldid"}->{level},
           $bld_data->{"$planet"}->{"$bldid"}->{x},
           $bld_data->{"$planet"}->{"$bldid"}->{y},
+          $bld_data->{"$planet"}->{"$bldid"}->{leveled},
           $bldid
           );
       print "\n";

@@ -52,10 +52,10 @@ use Exception::Class;
     verbose("Inspecting $planet_name\n");
     my $planet    = $glc->body(id => $planets{$planet_name});
     my $result    = $planet->get_buildings;
-    if ($result->{status}{body}{type} eq 'space station' && !$opts{'station'}) {
-      verbose("Skipping Space Station: $planet_name\n");
-      next;
-    }
+#    if ($result->{status}{body}{type} eq 'space station' && !$opts{'station'}) {
+#      verbose("Skipping Space Station: $planet_name\n");
+#      next;
+#    }
     my $buildings = $result->{buildings};
     foreach my $bldid (keys %$buildings) {
       $buildings->{$bldid}->{leveled} = $buildings->{$bldid}->{level};
