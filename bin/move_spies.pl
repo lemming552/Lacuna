@@ -191,6 +191,8 @@ use utf8;
                        $_->{defense_rating} >= $opts{min_def} and
                        $_->{defense_rating} <= $opts{max_def} } @spies;
 
+  @spy_ids = sort { $a <=> $b } @spy_ids;
+
   if ($opts{number} and $opts{number} < scalar @spy_ids) {
     print "$dirstr $opts{number} of ",scalar @spies, " spies.\n";
     splice @spy_ids, $opts{number};
