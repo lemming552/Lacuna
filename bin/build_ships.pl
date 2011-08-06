@@ -348,6 +348,12 @@ sub ship_types {
         hulk
         mining_platform_ship
         observatory_seeker
+        placebo
+        placebo2
+        placebo3
+        placebo4
+        placebo5
+        placebo6
         probe
         scanner
         scow
