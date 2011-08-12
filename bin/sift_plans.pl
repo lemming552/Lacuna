@@ -322,7 +322,7 @@ sub inter {
       push @slice, $plan;
     }
     elsif (grep { "$plan->{name}" eq "$_" } @{ $plan_types->{interest} }) {
-      if ( ($plan->{level} == 1) or ($plan->{level} >= 10) ) {
+      if ( ($plan->{level} == 1) or ($plan->{level} >= 15) ) {
         push @slice, $plan;
       }
     }
@@ -338,7 +338,7 @@ sub inter {
         push @slice, $plan;
       }
     }
-    elsif ( ($plan->{level} >= 10) or ($plan->{extra_build_level} >= 5)) {
+    elsif ( ($plan->{level} >= 15) or ($plan->{extra_build_level} >= 5)) {
       push @slice, $plan;
     }
   }
@@ -399,12 +399,15 @@ sub return_types {
     "Crashed Ship Site",
     "Gas Giant Settlement Platform",
     "Halls of Vrbansk",
-    "Subspace Supply Depot",
+    "Interdimensional Rift",
     "Junk Henge Sculpture",
+    "Kalavian Ruins",
     "Metal Junk Arches",
     "Great Ball of Junk",
-    "Space Junk Park",
+    "Pantheon of Hagness",
     "Pyramid Junk Sculpture",
+    "Space Junk Park",
+    "Subspace Supply Depot",
    ];
 
   $plan_types{plus} = [
