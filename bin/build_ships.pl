@@ -309,7 +309,7 @@ sub setup_yhash {
 
 sub usage {
     diag(<<END);
-Usage: $0 --planet <planet> --ships <shiptype> [options]
+Usage: $0 --planet <planet> --type <shiptype> [options]
 
 
 Options:
