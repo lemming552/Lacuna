@@ -24,7 +24,7 @@ use Exception::Class;
     'h|help',
     'v|verbose',
     'planet=s',
-    'config',
+    'config=s',
     'dumpfile',
     'station',
   );
