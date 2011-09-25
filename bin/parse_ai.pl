@@ -156,7 +156,7 @@ sub figure_zone {
   my ($coord) = @_;
 
   my $sign = $coord > 0 ? 1 : -1;
-  my $zone = int( (abs($coord) - 250)/250);
+  my $zone = int( abs($coord)/250);
   return ($zone * $sign);
 }
 
