@@ -45,19 +45,22 @@ GetOptions(
   }
   else {
     if ($tabs) {
-      print "Name,x,y,Race,Status\n";
+      print "Name,x,y,Zone,Race,Status\n";
     }
     else {
-      printf "%${max_name}s %6s %6s %7s %15s %s\n", "Name", "x", "y", "Dist", "Race", "Status";
+      printf "%${max_name}s %6s %6s %7s %15s %s\n", "Name", "x", "y", "Zone",
+                                                    "Dist", "Race", "Status";
     }
     for my $ai (sort bydist @$ais) {
       $ai->{race} = "Saben" if ($ai->{race} =~ /Demesne/);
       if ($tabs) {
-        print $ai->{name},",",$ai->{x},",",$ai->{y},",",$ai->{race},",",$ai->{status},"\n";
+        print $ai->{name},",",$ai->{x},",",$ai->{y},",", $ai->{zone}, ",",
+              $ai->{race},",",$ai->{status},"\n";
       }
       else {
-        printf "%${max_name}s %6d %6d %7.2f %-15s %s\n", $ai->{name}, $ai->{x}, $ai->{y},
-                                           $ai->{dist}, substr($ai->{race},0,15), $ai->{status};
+        printf "%${max_name}s %6d %6d %5s %7.2f %-15s %s\n", $ai->{name},
+                       $ai->{x}, $ai->{y}, $ai->{zone}, $ai->{dist},
+                       substr($ai->{race},0,15), $ai->{status};
       }
     }
   }
@@ -71,10 +74,10 @@ sub compare {
 
   printf "%${max_name}s %6s %6s %7s %15s %s\n", "Name", "x", "y", "Dist", "Race", "Status";
   for my $ai (@$ais) {
-    next if $ai->{status} ne "Active";
+    next unless ($ai->{status} eq "Active" or $ai->{status} eq "Tournament");
     unless (defined($compare{"$ai->{name}"})) {
       $ai->{race} = "Saben" if ($ai->{race} =~ /Demesne/);
-      printf "%${max_name}s %6d %6d %7.2f %-15s %s Gone\n", $ai->{name}, $ai->{x}, $ai->{y},
+      printf "%${max_name}s %6d %6d %7.2f %-15s %10s Gone\n", $ai->{name}, $ai->{x}, $ai->{y},
                                            $ai->{dist}, substr($ai->{race},0,15), $ai->{status};
     }
   }
@@ -142,10 +145,19 @@ sub read_ai {
       push @ais, $dref;
       $max_name = length($dref->{name}) if (length($dref->{name}) > $max_name);
     }
+    $dref->{zone} = join("|", figure_zone($dref->{x}), figure_zone($dref->{y}));
   }
   close($fh);
 
   return (\@ais, $max_name);
+}
+
+sub figure_zone {
+  my ($coord) = @_;
+
+  my $sign = $coord > 0 ? 1 : -1;
+  my $zone = int( (abs($coord) - 250)/250);
+  return ($zone * $sign);
 }
 
 sub bydist {
