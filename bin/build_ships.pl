@@ -19,6 +19,7 @@ use utf8;
   my $number = 0;
   my $noreserve = 0;
   my $time;
+  my $rpcsleep = 2;
 
   GetOptions(
     'planet=s@'  => \@planets,
@@ -29,11 +30,12 @@ use utf8;
     'number=i'  => \$number,
     'noreserve' => \$noreserve,
     'time=i' => \$time,
+    'sleep=i' => \$rpcsleep,
   );
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $cfg_file,
-    rpc_sleep => 2,
+    rpc_sleep => $rpcsleep,
     # debug    => 1,
   );
 
@@ -164,6 +166,10 @@ use utf8;
             print $error, "\n";
             push @del_planet, $planet;
           }
+          elsif ($error =~ /The server is offline/) {
+            print "Server is down, stopping builds.\n";
+            $not_done = 0; last;
+          }
           elsif ($error =~ /1010/) {
             if ($error =~ /You have already made the maximum number of requests/) {
               print "Out of RPCs for the day, take a walk.\n";
@@ -188,7 +194,7 @@ use utf8;
             print $error, "\n";
           }
         }
-        sleep 2;
+#        sleep 2;
       }
     }
     if ($not_done) {

@@ -24,7 +24,7 @@ use utf8;
     config       => "lacuna.yml",
     dumpfile     => $log_dir . '/sift_plans.js',
     min_plus     => 0,
-    max_plus     => 29,
+    max_plus     => 30,
     min_base     => 1,
     max_base     => 30,
   );
@@ -279,6 +279,7 @@ sub grab_plans {
       my $slice = inter($plans, $plan_types );
       push @$slice, @{ yoink($plans, $plan_types, "city" )};
       push @$slice, @{ yoink($plans, $plan_types, "station" )};
+      push @$slice, @{ yoink($plans, $plan_types, "glyph" )};
       for my $sl (@$plans) {
         $plans{$sl->{id}} = $sl unless ( grep { $sl->{id} eq $_->{id} } @$slice );
       }
@@ -374,10 +375,6 @@ sub return_types {
 
   $plan_types{decor} = [
     "Beach [1]",
-    "Beach [10]",
-    "Beach [11]",
-    "Beach [12]",
-    "Beach [13]",
     "Beach [2]",
     "Beach [3]",
     "Beach [4]",
@@ -386,6 +383,10 @@ sub return_types {
     "Beach [7]",
     "Beach [8]",
     "Beach [9]",
+    "Beach [10]",
+    "Beach [11]",
+    "Beach [12]",
+    "Beach [13]",
     "Crater",
     "Grove of Trees",
     "Lagoon",
@@ -396,18 +397,22 @@ sub return_types {
 
   $plan_types{any} = [
     "Black Hole Generator",
+    "Citadel of Knope",
     "Crashed Ship Site",
     "Gas Giant Settlement Platform",
     "Halls of Vrbansk",
     "Interdimensional Rift",
     "Junk Henge Sculpture",
     "Kalavian Ruins",
+    "Library of Jith",
     "Metal Junk Arches",
     "Great Ball of Junk",
+    "Oracle of Anid",
     "Pantheon of Hagness",
     "Pyramid Junk Sculpture",
     "Space Junk Park",
     "Subspace Supply Depot",
+    "Temple of the Drajilites"
    ];
 
   $plan_types{plus} = [

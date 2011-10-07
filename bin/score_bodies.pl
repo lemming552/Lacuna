@@ -30,7 +30,7 @@ my $star_file   = "data/stars.csv";
 my $statistics  = "data/system_stats.csv";
 my $planet_file = "data/planet_score.js";
 my $planet = '';
-my $help; my $opt_a = 0; my $opt_g = 0; my $opt_h = 0; my $opt_s; my $nodist = 0;
+my $help; my $opt_a = 0; my $opt_g = 0; my $opt_h = 0; my $opt_o = 0; my $opt_s = 0; my $nodist = 0;
 
 GetOptions(
   'x=i'          => \$home_x,
@@ -45,12 +45,13 @@ GetOptions(
   'asteroid'     => \$opt_a,
   'gas'          => \$opt_g,
   'habitable'    => \$opt_h,
-  'systems'      => \$opt_s,
+  'stations'     => \$opt_s,
+  'systems'      => \$opt_o,
 );
   
   usage() if ($help);
-  if ($opt_s) {
-    $opt_a = $opt_g = $opt_h = 1;
+  if ($opt_o) {
+    $opt_a = $opt_g = $opt_h = $opt_s = 1;
   }
 
   my $json = JSON->new->utf8(1);
@@ -152,6 +153,7 @@ GetOptions(
     next if ($bod->{type} eq "A" and $opt_a == 0);
     next if ($bod->{type} eq "G" and $opt_g == 0);
     next if ($bod->{type} eq "H" and $opt_h == 0);
+    next if ($bod->{type} eq "S" and $opt_s == 0);
     next if ($bod->{dist} > $max_dist);
   
     printf "%s\t" x ( scalar @fields - 2),
