@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Just a proof of concept for space station labs
+# Multiplanet Space Station Builds
 
 use strict;
 use warnings;
@@ -9,37 +9,58 @@ use lib "$FindBin::Bin/../lib";
 use List::Util            (qw(first));
 use Games::Lacuna::Client;
 use Getopt::Long qw(GetOptions);
-use YAML;
-use YAML::Dumper;
+use DateTime;
+use JSON;
 
 
-  my $dump_file = "data/data_ssla.yml";
-  my $planet_name;
-  my $cfg_file = "lacuna.yml";
-  my $help;
-
-  GetOptions(
-    'output=s' => \$dump_file,
-    'planet=s' => \$planet_name,
-    'config=s' => \$cfg_file,
-    'help'     => \$help,
+  my %opts = (
+        h        => 0,
+        v        => 0,
+        config   => "lacuna.yml",
+        loop     => 0,
+        dryrun   => 0,
+        dumpfile => "log/dump_ssla.js";
+        datafile => "data/station_cfg.js";
   );
 
-  unless ( $cfg_file and -e $cfg_file ) {
+  GetOptions(\%opts,
+    'h|help',
+    'v|verbose',
+    'dumpfile=s',
+    'datafile=s',
+    'planet=s@',
+    'config=s',
+    'loop=i',
+    'dryrun',
+  );
+
+  unless ( $opts{config} and -e $opts{config} ) {
     die "Did not provide a config file";
   }
 
-  usage() if ($help or !$planet_name);
+  usage() if ($opts{h} or !$opts{planet});
   
-  my $client = Games::Lacuna::Client->new(
-    cfg_file => $cfg_file,
+  my $glc = Games::Lacuna::Client->new(
+    cfg_file => $opts{config},
     # debug    => 1,
   );
 
-  my $dumper = YAML::Dumper->new;
-  $dumper->indent_width(4);
+  my $json = JSON->new->utf8(1);
+  $json = $json->pretty([1]);
+  $json = $json->canonical([1]);
 
-  my $data = $client->empire->view_species_stats();
+  my $bld_data = get_json($data_file);
+  unless ($bld_data) {
+    die "Could not read $data_file\n";
+  }
+
+  my $rpc_cnt;
+  my $rpc_lmt;
+  my $beg_dt = DateTime->now;
+
+  my $labhash = setup_labs($opts{planet});
+
+  my $data = $glc->empire->view_species_stats();
 
 # Get planets
   my $planets        = $data->{status}->{empire}->{planets};
@@ -47,52 +68,26 @@ use YAML::Dumper;
 
   my $distcent;
   for my $pid (keys %$planets) {
-    my $curr_planet = $client->body(id => $pid)->get_status()->{body}->{name};
+    my $curr_planet = $glc->body(id => $pid)->get_status()->{body}->{name};
     next unless ("$curr_planet" eq "$planet_name"); # Test Planet
 
-    my $buildings = $client->body(id => $pid)->get_buildings()->{buildings};
+    my $buildings = $glc->body(id => $pid)->get_buildings()->{buildings};
     print "$planet_name\n";
 
-    $distcent  = first { defined($_) } grep { $buildings->{$_}->{url} eq '/ssla' } keys %$buildings;
+    $distcent  = first { defined($_) }
+                 grep { $buildings->{$_}->{url} eq '/ssla' }
+                 keys %$buildings;
     last;
   }
 
   print "Space Station Lab: ", $distcent,"\n";
 
-  my $bld_lst = [
-                  { type => "policestation", level => 8 },
-                  { type => "policestation", level => 9 },
-                  { type => "policestation", level => 10 },
-                  { type => "opera", level => 7 },
-                  { type => "opera", level => 8 },
-                  { type => "opera", level => 9 },
-                  { type => "opera", level => 10 },
-                  { type => "food", level => 8 },
-                  { type => "food", level => 9 },
-                  { type => "food", level => 10 },
-                  { type => "art", level => 8 },
-                  { type => "art", level => 9 },
-                  { type => "art", level => 10 },
-                  { type => "command", level => 8 },
-                  { type => "command", level => 9 },
-                  { type => "command", level => 10 },
-                  { type => "ibs", level => 8 },
-                  { type => "ibs", level => 9 },
-                  { type => "ibs", level => 10 },
-                  { type => "parliament", level => 8 },
-                  { type => "parliament", level => 9 },
-                  { type => "parliament", level => 10 },
-                  { type => "warehouse", level => 7 },
-                  { type => "warehouse", level => 8 },
-                  { type => "warehouse", level => 9 },
-                  { type => "warehouse", level => 10 },
-                ];
   my $em_bit;
   print "Getting View\n";
-  for my $work (sort bylevel @{$bld_lst}) {
-    $em_bit = $client->building( id => $distcent, type => 'SSLA' )->view();
+  for my $work (@{$bld_data}) {
+    $em_bit = $glc->building( id => $distcent, type => 'SSLA' )->view();
     if (open(OUTPUT, ">", "$dump_file")) {
-      print OUTPUT $dumper->dump($em_bit);
+      print OUTPUT $json->pretty->canonical->encode($em_bit);
       close(OUTPUT);
     }
     else {
@@ -102,14 +97,15 @@ use YAML::Dumper;
       print "Currently making ",$em_bit->{make_plan}->{making};
       print ". Need to wait until ",$em_bit->{building}->{work}->{end};
       print ". So sleeping for ",$em_bit->{building}->{work}->{seconds_remaining}," seconds.\n";
-      sleep $em_bit->{building}->{work}->{seconds_remaining};
+      sleep $em_bit->{building}->{work}->{seconds_remaining} + 5;
       redo;
     }
 
-    $em_bit = $client->building( id => $distcent, type => 'SSLA' )->make_plan($work->{type}, $work->{level});
+    $em_bit = $glc->building( id => $distcent, type => 'SSLA'
+                        )->make_plan($work->{type}, $work->{level});
     print "Building $work->{level} of $work->{type}\n";
     if (open(OUTPUT, ">", "$dump_file")) {
-      print OUTPUT $dumper->dump($em_bit);
+      print OUTPUT $json->pretty->canonical->encode($em_bit);
       close(OUTPUT);
     }
     else {
@@ -117,13 +113,29 @@ use YAML::Dumper;
     }
   }
 
-
   print "RPC Count Used: $em_bit->{status}->{empire}->{rpc_count}\n";
 exit;
 
 sub bylevel {
   $a->{level} <=> $b->{level} ||
   $a->{type} cmp $b->{type};
+}
+
+sub get_json {
+  my ($file) = @_;
+
+  if (-e $file) {
+    my $fh; my $lines;
+    open($fh, "$file") || die "Could not open $file\n";
+    $lines = join("", <$fh>);
+    my $data = $json->decode($lines);
+    close($fh);
+    return $data;
+  }
+  else {
+    warn "$file not found!\n";
+  }
+  return 0;
 }
 
 sub usage {
