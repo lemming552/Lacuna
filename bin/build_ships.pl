@@ -108,6 +108,11 @@ use utf8;
 #    }
     for my $planet (keys %$yhash) {
       $not_done = 1;
+      unless ( defined($yhash->{"$planet"}->{yards}) ) {
+        print "No yards to build with on $planet\n";
+        push @del_planet, $planet;
+        last;
+      }
       if (scalar @{$yhash->{"$planet"}->{yards}} > 1) {
         print scalar @{$yhash->{"$planet"}->{yards}}, " Yards on $planet\n";
       }
@@ -194,7 +199,6 @@ use utf8;
             print $error, "\n";
           }
         }
-#        sleep 2;
       }
     }
     if ($not_done) {
@@ -284,6 +288,10 @@ sub setup_yhash {
         die;
       }
 
+      $rpc_cnt = $buildable->{status}->{empire}->{rpc_count};
+      $rpc_lmt = $buildable->{status}->{server}->{rpc_limit};
+      last if ($yhash->{"$planet"}->{dockspace} == 0);
+
       unless ($buildable->{buildable}->{"$ship_build"}->{can}) {
         print "$planet Can not build $ship_build : ",
               @{$buildable->{buildable}->{"$ship_build"}->{reason}}, "\n";
@@ -299,12 +307,11 @@ sub setup_yhash {
       else {
         $yhash->{"$planet"}->{bldnum} = $number;
       }
-      $rpc_cnt = $buildable->{status}->{empire}->{rpc_count};
-      $rpc_lmt = $buildable->{status}->{server}->{rpc_limit};
       unless ($yard->{maxq} == 0) {
         push @{$yhash->{"$planet"}->{yards}}, $yard;
       }
     }
+    
     print "$planet: We hope to build ", $yhash->{"$planet"}->{bldnum},
         " with a reserve of ", $yhash->{"$planet"}->{reserve}, "\n";
   }
@@ -374,6 +381,7 @@ sub ship_types {
         spy_pod
         spy_shuttle
         stake
+        supply_pod2
         supply_pod4
         surveyor
         sweeper
