@@ -109,20 +109,22 @@ use utf8;
 
   my $target; my $target_name;
   my $bhg =  $glc->building( id => $bhg_id, type => 'BlackHoleGenerator' );
-  if ( defined $opts{x} && defined $opts{y} ) {
-    $target      = { x => $opts{x}, y => $opts{y} };
-    $target_name = "$opts{x},$opts{y}";
-  }
-  elsif ( defined $opts{target} ) {
-    $target      = { body_name => $opts{target} };
-    $target_name = $opts{target};
-  }
-  elsif ( defined $opts{id} ) {
-    $target      = { body_id => $opts{id} };
-    $target_name = $opts{id};
-  }
-  else {
-    die "target arguments missing\n";
+  unless ($opts{view}) {
+    if ( defined $opts{x} && defined $opts{y} ) {
+      $target      = { x => $opts{x}, y => $opts{y} };
+      $target_name = "$opts{x},$opts{y}";
+    }
+    elsif ( defined $opts{target} ) {
+      $target      = { body_name => $opts{target} };
+      $target_name = $opts{target};
+    }
+    elsif ( defined $opts{id} ) {
+      $target      = { body_id => $opts{id} };
+      $target_name = $opts{id};
+    }
+    else {
+      die "target arguments missing\n";
+    }
   }
 
   if ($bhg) {
