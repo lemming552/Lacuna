@@ -28,6 +28,7 @@ use utf8;
     'target=s',
     'help|h',
     'datafile=s',
+    'config=s',
     'make_asteroid',
     'make_planet',
     'increase_size',
