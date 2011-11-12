@@ -14,10 +14,10 @@ use utf8;
 
   my $planet_name;
   my $help;
-  my $datafile = "data/data_oracle.yml";
-  my $probe_file = "data/probe_oracle.yml";
+  my $datafile = "data/data_oracle.js";
+  my $probe_file = "data/probe_oracle.js";
   my $starfile = "data/stars.csv";
-  my $maxdist = 50;
+  my $maxdist = 300;
   my $config  = "lacuna.yml";
 
   GetOptions(
@@ -40,6 +40,10 @@ use utf8;
   open($pfh, ">", "$probe_file") || die "Could not open $probe_file";
   my $ofh;
   open($ofh, ">", "$datafile") || die "Could not open $datafile";
+
+  my $json = JSON->new->utf8(1);
+  $json = $json->pretty([1]);
+  $json = $json->canonical([1]);
 
   my $data  = $glc->empire->view_species_stats();
   my $ename = $data->{status}->{empire}->{name};
@@ -106,11 +110,12 @@ use utf8;
         print " Out of Range\n";
       }
     }
+    sleep 1;
   }
 
-  YAML::Any::DumpFile($pfh, \@bodies);
+  print $pfh $json->pretty->canonical->encode(\@bodies);
   close($pfh);
-  YAML::Any::DumpFile($ofh, $stars);
+  print $ofh $json->pretty->canonical->encode($stars);
   close($ofh);
 
   print "$glc->{total_calls} api calls made.\n";
