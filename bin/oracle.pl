@@ -9,7 +9,6 @@ use Getopt::Long qw(GetOptions);
 use List::Util   qw( first );
 use Date::Parse;
 use Date::Format;
-use YAML::XS;
 use utf8;
 
   my $planet_name;

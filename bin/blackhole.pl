@@ -9,7 +9,6 @@ use Getopt::Long qw(GetOptions);
 use List::Util   qw( first );
 use Date::Parse;
 use Date::Format;
-use YAML::XS;
 use utf8;
 
   my %opts = (
@@ -33,6 +32,7 @@ use utf8;
     'make_planet',
     'increase_size',
     'change_type=i',
+    'swap_places',
     'view',
   );
 
@@ -155,6 +155,9 @@ use utf8;
   }
   elsif ($opts{change_type}) {
     $bhg_out = $bhg->generate_singularity($target, "Change Type", $params);
+  }
+  elsif ($opts{swap_places}) {
+    $bhg_out = $bhg->generate_singularity($target, "Swap Places");
   }
   else {
     die "Nothing to do!\n";

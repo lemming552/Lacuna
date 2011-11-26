@@ -134,13 +134,11 @@ sub merge_probe {
     $orig->{observatory}->{stime} = $data->{observatory}->{stime};
     $orig->{observatory}->{ststr} = $data->{observatory}->{ststr};
     if ($data_e ne '') {
-      unless (cmp_emp($orig, $data)) {
-        print "Empire Info update for $orig->{name}\n";
-        $orig->{empire}->{alignment}       = $data->{empire}->{alignment};
-        $orig->{empire}->{id}              = $data->{empire}->{id};
-        $orig->{empire}->{is_isolationist} = $data->{empire}->{is_isolationist};
-        $orig->{empire}->{name}            = $data->{empire}->{name};
-      }
+      print "Empire Info update for $orig->{name}\n" unless ($orig_e eq '' or cmp_emp($orig, $data));
+      $orig->{empire}->{alignment}       = $data->{empire}->{alignment};
+      $orig->{empire}->{id}              = $data->{empire}->{id};
+      $orig->{empire}->{is_isolationist} = $data->{empire}->{is_isolationist};
+      $orig->{empire}->{name}            = $data->{empire}->{name};
     }
     my $new_own = ownership_test($orig, $orig_e);
     unless (defined($checked{"$orig->{star_id}"})) {
@@ -163,6 +161,7 @@ sub merge_probe {
       delete $orig->{ore_hour};
       delete $orig->{ore_stored};
       delete $orig->{plots_available};
+
       delete $orig->{population};
       delete $orig->{waste_capacity};
       delete $orig->{waste_hour};
@@ -190,11 +189,13 @@ sub merge_probe {
       %{$orig->{station}} = %{$data->{station}};
     }
   }
-  if ($orig->{type} ne $data->{type}) {
-# We probably have a new space station or asteroid to account for
-    printf "Changing type of %s from %s:%s to %s:%s\n",
-             $data->{name}, $orig->{image}, $orig->{type},
-             $data->{image}, $data->{type};
+  if ($orig->{type} ne $data->{type} or  # We probably have a new space station or asteroid to account for
+      $orig->{size} ne $data->{size} or  # Some size changes to account for
+      $orig->{star_id} ne $data->{star_id} # A planet got moved.
+     ) {
+    printf "Changing type:size:star_id of %s from %s:%s:%d:%s to %s:%s:%d:%s\n",
+             $data->{name}, $orig->{image}, $orig->{type}, $orig->{size}, $orig->{star_id},
+             $data->{image}, $data->{type}, $data->{size}, $data->{star_id};
     $orig = copy_body($orig, $data);
   }
   return $orig;
@@ -294,8 +295,8 @@ This program takes all data from two probe files and merges them.
 Options:
 
   --help                 - Prints this out
-  --import <file>        - File to import, default: data/probe_data_raw.yml
-  --merge  <file>        - Main file to merge into, default: data/probe_data_cmb.yml
+  --import <file>        - File to import, default: data/probe_data_raw.js
+  --merge  <file>        - Main file to merge into, default: data/probe_data_cmb.js
 
 END
  exit 1;

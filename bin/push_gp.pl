@@ -37,7 +37,9 @@ my $cfg_file;
 
   my $from;
   my $to;
+  my $ship_type;
   my $ship_name;
+  my $help;
   my $levelone = 0;
   my $match_glyph;
   my $match_plan;
@@ -45,23 +47,27 @@ my $cfg_file;
   my $pmax;
   my $dryrun;
   my $stay;
+  my $decor;
   my $datafile = "data/data_push_gp.yml";
 
   GetOptions(
-    'from=s'  => \$from,
-    'to=s'    => \$to,
-    'ship=s'  => \$ship_name,
-    'glyph=s' => \$match_glyph,
-    'plan=s'  => \$match_plan,
+    'from=s'   => \$from,
+    'to=s'     => \$to,
+    'sname=s'  => \$ship_name,
+    'stype=s'  => \$ship_type,
+    'glyph=s'  => \$match_glyph,
+    'help'     => \$help,
+    'plan=s'   => \$match_plan,
     'levelone' => \$levelone,
-    'gmax=i'  => \$gmax,
-    'pmax=i'  => \$pmax,
-    'stay'    => \$stay,
-    'dryrun'  => \$dryrun,
-    'datafile'=> \$datafile,
+    'gmax=i'   => \$gmax,
+    'pmax=i'   => \$pmax,
+    'stay'     => \$stay,
+    'decor'    => \$decor,
+    'dryrun'   => \$dryrun,
+    'datafile' => \$datafile,
   );
 
-  usage() if !$from || !$to;
+  usage() if $help || !$from || !$to;
 
   my $glc = Games::Lacuna::Client->new(
 	cfg_file => $cfg_file,
@@ -128,6 +134,12 @@ my $cfg_file;
     @plans =
         grep {
             $_->{level} > 1 or $_->{extra_build_level} > 0
+        } @plans;
+  }
+  unless ($decor) {
+    @plans =
+        grep {
+            !($_->{name} =~ /Beach|Crater|Grove|Lagoon|Lake|Patch|Rocky/i)
         } @plans;
   }
 

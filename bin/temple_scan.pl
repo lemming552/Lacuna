@@ -5,9 +5,7 @@ use warnings;
 use Getopt::Long qw( GetOptions );
 use List::Util   qw( first );
 use Data::Dumper;
-use YAML;
-use YAML::Dumper;
-
+use JSON;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client ();
@@ -15,8 +13,8 @@ use Games::Lacuna::Client ();
   my $planet;
   my $help;
   my $starfile = "data/stars.csv";
-  my $datafile = "data/temple_data.yml";
-  my $maxdist = 60;
+  my $datafile = "data/temple_data.js";
+  my $maxdist = 300;
 
   GetOptions(
     'planet=s'   => \$planet,
@@ -39,9 +37,10 @@ use Games::Lacuna::Client ();
 	  # debug    => 1,
   );
 
-  my $datadump = YAML::Dumper->new;
-  $datadump->indent_width(4);
-  open(OUTPUT, ">", "$datafile") || die "Could not open $datafile";
+  my $json = JSON->new->utf8(1);
+  $json = $json->pretty([1]);
+  $json = $json->canonical([1]);
+  open(OUTPUT, ">", $datafile) || die "Could not open $datafile";
 
 
 # Load the planets
@@ -55,7 +54,6 @@ use Games::Lacuna::Client ();
 
   my $result = $body->get_buildings;
 
-#  print $datadump->dump($result);
   my ($x,$y) = @{$result->{status}->{body}}{'x','y'};
 
   my $buildings = $result->{buildings};
@@ -73,8 +71,6 @@ use Games::Lacuna::Client ();
 # Load Stars
   my $stars = load_stars($starfile, $maxdist, $x, $y);
 
-#  print OUTPUT $datadump->dump($stars);
-#  print OUTPUT "Part 2";
   my $ok;
   foreach my $star (@$stars) {
     print "Looking at $star->{id}\n";
@@ -110,7 +106,7 @@ use Games::Lacuna::Client ();
     }
   }
 
-  print OUTPUT $datadump->dump($stars);
+  print OUTPUT $json->pretty->canonical->encode($stars);
 exit;
 
 sub load_stars {

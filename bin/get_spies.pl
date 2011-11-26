@@ -20,9 +20,9 @@ use Date::Format;
     h        => 0,
     v        => 0,
     config   => "lacuna.yml",
-    dumpfile => $log_dir."/spy_data_".
-                      time2str('%Y-%m-%dT%H:%M:%S%z', time).
-                      "-$random_bit.js",
+    dumpfile => $log_dir."/spy_data.js",
+#                      time2str('%Y%m%dT%H%M%S%z', time).
+#                      "_$random_bit.js",
   );
 
 
