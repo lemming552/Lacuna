@@ -135,6 +135,10 @@ use utf8;
           $response = $@;
           print "Error sending $ship->{name}:$ship->{id} to $stations->{$stid}->{name}\n";
           print "Error: $response\n";
+          if ($response =~ /Slow down/) {
+            print "Taking a break\n";
+            sleep 60;
+          }
         }
         if (need_more($stations->{$stid}) ) {
           $loop = 1;
@@ -208,15 +212,11 @@ sub load_ship {
   }
   if ($sum > $ship->{cap}) {
     print "$station->{name} wants $sum, $ship->{name} can only carry $ship->{cap}.\n";
-    my $partial = int($ship->{cap}/5);
+    my $partial = int($ship->{cap}/4);
     my $new_sum = 0;
     for $t (@base_types) {
-      next if $t eq "energy";
       $needs{$t} = $partial if ($partial < $needs{$t});
       $new_sum += $needs{$t};
-    }
-    if ($partial * 2 < $needs{energy}) {
-      $needs{energy} = $ship->{cap} - $new_sum;
     }
   }
   my $send = {};
@@ -302,8 +302,10 @@ sub load_station {
   };
   unless ( $ok ) {
     my $error = $@;
-    warn "Failed getting data on $station->{id}:$station->{name} due to $error\n";
-    return 0;
+    print "Failed getting data on $station->{id}:$station->{name} due to $error\n";
+    my %body_stats;
+    $body_stats{done} = 1;
+    return \%body_stats;
   }
   my %body_stats = %{$stat_stat->{status}->{body}};
   $body_stats{done} = 0;
