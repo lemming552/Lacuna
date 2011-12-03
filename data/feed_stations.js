@@ -1,37 +1,39 @@
 {
-   "PLANET_ONE" : {
-      "pid" : P1ID,
-      "tmid" : TRADE MIN ID,
+   "Planet_One" : {
+      "pid" : 999999,
+      "tmid" : 9999999,
       "food" : {
-          "min" : 1000
+          "min" : 500000
         },
       "ore" : {
-          "min" : 50000
+          "min" : 500000
         },
       "ships" : [
-          { "name" : "Station Supply 01", "cap" : 970200, "id" : SHIP_ID },
-          { "name" : "Station Supply 02", "cap" : 970200, "id" : SHIP_ID }
+          { "name" : "Station Supply 01", "cap" : 4645200, "id" : 9999999 },
+          { "name" : "Station Supply 02", "cap" : 4645200, "id" : 9999999 },
+          { "name" : "Station Supply 03", "cap" : 4645200, "id" : 9999999 }
         ],
       "stations" : [
-          { "active" : 1, "id" : BODY_ID, "name" : "Station Name", "oname" : "Old Name for reference" },
-          { "active" : 0, "id" : BODY_ID, "name" : "Station Name", "oname" : "Old Name for reference" }
+          { "active" : 1, "id" : 999999, "name" : "Station_Name", "oname" : "Old Name" },
+          { "active" : 1, "id" : 999999, "name" : "Station_Two",  "oname" : "Old Name" }
         ]
    },
-   "PLANET_TWO" : {
-      "pid" : P2 Body ID,
-      "tmid" : Trade Min ID,
+   "Planet_Two" : {
+      "pid" : 999999,
+      "tmid" : 9999999,
       "food" : {
-          "min" : 0
+          "min" : 500000
         },
       "ore" : {
-          "min" : 90000
+          "min" : 500000
         },
       "ships" : [
-          { "name" : "Supply 1", "cap" : 4645200, "id" : SHIP_ID },
-          { "name" : "Supply 2", "cap" : 4645200, "id" : SHIP_ID }
+          { "name" : "Station Supply 08", "cap" : 4645200, "id" : 99999999 },
+          { "name" : "Station Supply 09", "cap" : 4645200, "id" : 99999999 },
+          { "name" : "Station Supply 10", "cap" : 4645200, "id" : 99999999 }
         ],
       "stations" : [
-          { "active" : 1, "id" : BODY_ID, "name" : "Station Name", "oname" : "Old Name for reference" }
+          { "active" : 1, "id" : 999999, "name" : "Station Name", "oname" : "Old Name" }
         ]
    }
 }
