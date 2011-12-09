@@ -226,6 +226,9 @@ use utf8;
       }
 #      print "Resume: ", $resume_dt->hms, "\n";
     }
+    unless (keys %$yhash) {
+      $not_done = 0;
+    }
   }
   print "$glc->{rpc_count} RPC\n";
   undef $glc;
@@ -290,7 +293,13 @@ sub setup_yhash {
 
       $rpc_cnt = $buildable->{status}->{empire}->{rpc_count};
       $rpc_lmt = $buildable->{status}->{server}->{rpc_limit};
-      last if ($yhash->{"$planet"}->{dockspace} == 0);
+#      last if ($yhash->{"$planet"}->{dockspace} == 0);
+      if ( ($yhash->{"$planet"}->{dockspace} - $yhash->{"$planet"}->{reserve} ) <= 0) {
+        print "Nothing to build on ", $planet,
+              ". You have ", $buildable->{docks_available},
+              " dockspace left with a reserve of ", $yhash->{"$planet"}->{reserve}, ".\n";
+        last;
+      }
 
       unless ($buildable->{buildable}->{"$ship_build"}->{can}) {
         print "$planet Can not build $ship_build : ",
@@ -312,8 +321,13 @@ sub setup_yhash {
       }
     }
     
-    print "$planet: We hope to build ", $yhash->{"$planet"}->{bldnum},
-        " with a reserve of ", $yhash->{"$planet"}->{reserve}, "\n";
+    if ($yhash->{"$planet"}->{bldnum} <= 0) {
+      delete $yhash->{"$planet"};
+    }
+    else {
+      print "$planet: We hope to build ", $yhash->{"$planet"}->{bldnum},
+          " with a reserve of ", $yhash->{"$planet"}->{reserve}, "\n" 
+    }
   }
   print "With Setup: RPC ", $rpc_cnt, " of ", $rpc_lmt, " Limit\n";
 
