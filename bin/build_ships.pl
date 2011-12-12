@@ -294,7 +294,7 @@ sub setup_yhash {
       $rpc_cnt = $buildable->{status}->{empire}->{rpc_count};
       $rpc_lmt = $buildable->{status}->{server}->{rpc_limit};
 #      last if ($yhash->{"$planet"}->{dockspace} == 0);
-      if ( ($yhash->{"$planet"}->{dockspace} - $yhash->{"$planet"}->{reserve} ) <= 0) {
+      if ( ($buildable->{docks_available} - $yhash->{"$planet"}->{reserve} ) <= 0) {
         print "Nothing to build on ", $planet,
               ". You have ", $buildable->{docks_available},
               " dockspace left with a reserve of ", $yhash->{"$planet"}->{reserve}, ".\n";
