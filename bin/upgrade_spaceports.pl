@@ -23,7 +23,7 @@ use Exception::Class;
   GetOptions(\%opts,
     'h|help',
     'v|verbose',
-    'planet=s',
+    'planet=s@',
     'config=s',
     'dumpfile',
     'maxlevel=i',
@@ -51,8 +51,8 @@ use Exception::Class;
 
   my $planet_name;
   for $planet_name (keys %planets) {
-    next if ($opts{planet} && "$opts{planet}" ne "$planet_name");
-    verbose("Inspecting $planet_name\n");
+    next if ($opts{planet} and not (grep { $planet_name eq $_ } @{$opts{planet}}));
+    print "Inspecting $planet_name\n";
     my $planet    = $glc->body(id => $planets{$planet_name});
     my $result    = $planet->get_buildings;
     my $buildings = $result->{buildings};
