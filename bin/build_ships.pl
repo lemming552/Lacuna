@@ -12,7 +12,6 @@ use utf8;
 
   my @planets;
   my $cfg_file = "lacuna.yml";
-# Create program for generating shipyard file.
   my $yard_file = "data/shipyards.js";
   my $help    = 0;
   my $stype;
@@ -134,13 +133,30 @@ use utf8;
           next;
         }
         my $bld_result;
+        my $view_result;
         my $ships_building;
         $yard->{ysleep} = 0;
-        my $ok = eval {
-           $bld_result = $yard->{yard_pnt}->build_ship($ship_build);
+        my $ok;
+        $ok = eval {
+          $view_result = $yard->{yard_pnt}->view_build_queue();
         };
+        my $num_to_q = 0;
         if ($ok) {
-          $yhash->{"$planet"}->{keels}++;
+          $num_to_q = $yard->{maxq} - $view_result->{number_of_ships_building};
+          if ($num_to_q + $yhash->{"$planet"}->{keels} > $yhash->{"$planet"}->{bldnum}) {
+            $num_to_q =  $yhash->{"$planet"}->{bldnum} - $yhash->{"$planet"}->{keels};
+          }
+          if ($num_to_q > 0) {
+            $ok = eval {
+              $bld_result = $yard->{yard_pnt}->build_ship($ship_build, $num_to_q);
+            };
+          }
+          else {
+            $ok = 1013;
+          }
+        }
+        if ($ok) {
+          $yhash->{"$planet"}->{keels} += $num_to_q;
           print "Queued up $ship_build : ",
                  $yhash->{"$planet"}->{keels}, " of ",
                  $yhash->{"$planet"}->{bldnum}, " at ", $planet, " ";
@@ -148,7 +164,7 @@ use utf8;
           if ($ships_building >= $yard->{maxq} &&
             $yhash->{"$planet"}->{keels} < $yhash->{"$planet"}->{bldnum}) {
             print " We have $ships_building ships building.\n";
-            my $yrd_wait = ($ships_building - $yard->{maxq} + 1) * $yard->{bldtime};
+            my $yrd_wait = $ships_building * $yard->{bldtime};
             $yrd_wait = 60 if $yrd_wait < 60;
             $yard->{resume} = DateTime->now;
             $yard->{resume}->add(seconds => $yrd_wait);
