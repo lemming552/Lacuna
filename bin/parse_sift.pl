@@ -28,32 +28,35 @@ use utf8;
   unless ($idata) {
     die "Could not read $opts{input}\n";
   }
-  my $max_length = max map { length $_->{name} } @{$idata->{plans}};
+  for my $ship_id (sort keys %$idata) {
+    print "$idata->{$ship_id}->{name} : $ship_id\n";
+    my $max_length = max map { length $_->{name} } @{$idata->{$ship_id}->{plans}};
 
-  my %plan_out;
-  for my $plan (@{$idata->{plans}}) {
-    my $key = sprintf "%${max_length}s, level %2d",
+    my %plan_out;
+    for my $plan (@{$idata->{$ship_id}->{plans}}) {
+      my $key = sprintf "%${max_length}s, level %2d",
                       $plan->{name},
                       $plan->{level};
         
-    if ( $plan->{extra_build_level} ) {
-      $key .= sprintf " + %2d", $plan->{extra_build_level};
+      if ( $plan->{extra_build_level} ) {
+        $key .= sprintf " + %2d", $plan->{extra_build_level};
+      }
+      else {
+        $key .= "     ";
+      }
+      if (defined($plan_out{$key})) {
+        $plan_out{$key}++;
+      }
+      else {
+        $plan_out{$key} = 1;
+      }
     }
-    else {
-      $key .= "     ";
+    my $cnt;
+    for my $key (sort srtname keys %plan_out) {
+      print "$key  ($plan_out{$key})\n";
     }
-    if (defined($plan_out{$key})) {
-      $plan_out{$key}++;
-    }
-    else {
-      $plan_out{$key} = 1;
-    }
+    print "\nTotal of ",scalar @{$idata->{$ship_id}->{plans}}," plans.\n";
   }
-  my $cnt;
-  for my $key (sort srtname keys %plan_out) {
-    print "$key  ($plan_out{$key})\n";
-  }
-  print "\nTotal of ",scalar @{$idata->{plans}}," plans.\n";
 exit;
 
 sub srtname {

@@ -106,6 +106,7 @@ use utf8;
 
   my $plans_result = $trade_min->get_plans;
   my @plans        = @{ $plans_result->{plans} };
+  my $pcargo_each = $plans_result->{cargo_space_used_each};
 
   if ( !@plans ) {
     print "No plans available on $opts{from}\n";
@@ -133,34 +134,22 @@ use utf8;
     exit;
   }
 
-  my $ship_id;
+  my @ships;
 
   if ( $opts{sname} or $opts{stype} ) {
     my $ships = $trade_min->get_trade_ships->{ships};
     
-    my $ship;
     if ( $opts{sname} ) {
-      $ship =  first { $_->{name} =~ /\Q$opts{sname}/i } @$ships;
+      @ships =  grep { $_->{name} =~ /\Q$opts{sname}/i } @$ships;
     }
     elsif ( $opts{stype} ) {
-      $ship =  first { $_->{type} =~ /\Q$opts{stype}/i } @$ships;
+      @ships =  grep { $_->{type} =~ /\Q$opts{stype}/i } @$ships;
     }
     else {
       die "Inconcievable!\n";
     }
     
-    if ( $ship ) {
-      my $pcargo_each = $plans_result->{cargo_space_used_each};
-      my $cargo_req  = $pcargo_each * scalar @$send_plans;
-        
-      if ( $ship->{hold_size} < $cargo_req ) {
-        warn sprintf "$ship->{name} has a hold of: $ship->{hold_size}. Attempting to ship $cargo_req\n";
-        exit;
-      }
-        
-      $ship_id = $ship->{id};
-    }
-    else {
+    unless ( @ships ) {
       print "No ship matching \'";
       if ($opts{sname}) { print $opts{sname}; }
       if ($opts{stype}) { print $opts{stype}; }
@@ -170,6 +159,53 @@ use utf8;
   }
   else {
 #Pick fastest ship that can hold plans
+  }
+
+  my $output;
+  if ($opts{sname} or $opts{stype}) {
+    for my $ship (sort {$a->{id} <=> $b->{id} } @ships) {
+      my $ship_id = $ship->{id};
+      my $ship_name = $ship->{name};
+      my $sent_plans;
+      ($sent_plans, $send_plans) = send_ship($send_plans, $pcargo_each, $ship);
+      if ($sent_plans) {
+        $output->{$ship_id} = {
+          id => $ship_id,
+          name => $ship_name,
+          plans => $sent_plans,
+        };
+      }
+      last unless (scalar @{$send_plans} > 0);
+    }
+  }
+  else {
+    my $sent_plans;
+    ($sent_plans, $send_plans) = send_ship($send_plans, $pcargo_each, 0);
+    my $ship_id = 0;
+    my $ship_name = "";
+    $output->{$ship_id} = {
+      id => $ship_id,
+      name => $ship_name,
+      plans => $sent_plans,
+     };
+  }
+  print $df $json->pretty->canonical->encode($output);
+  print "$glc->{total_calls} api calls made.\n";
+  print "You have made $glc->{rpc_count} calls today\n";
+exit;
+
+sub send_ship {
+  my ($plan_list, $pcargo_each, $ship) = @_;
+
+  my $send_plans = $plan_list;
+  my $ship_id;
+  if ($ship) {
+    my $cargo_req  = $pcargo_each * scalar @$send_plans;
+    if ( $ship->{hold_size} < $cargo_req ) {
+      my @left    = splice(@$plan_list, 0, int($ship->{hold_size}/$pcargo_each));
+      $send_plans = \@left;
+    }
+    $ship_id = $ship->{id};
   }
 
   my @items = 
@@ -182,25 +218,26 @@ use utf8;
 
   my $popt = set_options($ship_id, $opts{stay});
   my $return = "";
-  my %output;
-  $output{plans} = $send_plans;
-  $output{ship}  = $ship_id;
-  print $df $json->pretty->canonical->encode(\%output);
   if ( $opts{dryrun} ) {
-    printf "Would of pushed %d plans\n", scalar @$send_plans;
+    printf "Would of pushed %d plans, leaving %d plans.\n",
+           scalar @$send_plans, scalar @$plan_list;
   }
   else {
-    my $return = $trade_min->push_items(
+    my $return = eval{ $trade_min->push_items(
       $to_id,
       \@items,
       $popt ? $popt
              : ()
-      );
-    printf "Pushed %d plans\n", scalar @$send_plans;
+    )};
+    if ($@) {
+      die "$@ error!\n";
+    }
+    printf "Pushed %d plans leaving %d.\n",
+           scalar @$send_plans, scalar @$plan_list;
     printf "Arriving %s\n", $return->{ship}{date_arrives};
   }
-  print "$glc->{total_calls} api calls made.\n";
-  print "You have made $glc->{rpc_count} calls today\n";
+  return ($send_plans, $plan_list);
+}
 
 exit;
 
@@ -432,7 +469,6 @@ sub return_types {
     "Gas Giant Settlement Platform",
     "Geo Thermal Vent",
     "Great Ball of Junk",
-    "Halls of Vrbansk",
     "Interdimensional Rift",
     "Junk Henge Sculpture",
     "Kalavian Ruins",

@@ -41,7 +41,7 @@ use utf8;
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $opts{config},
-    rpc_sleep => 2,
+    rpc_sleep => 1,
 #    prompt_captcha => 1,
 #    debug    => 1,
   );
@@ -72,6 +72,7 @@ use utf8;
     $ok = eval {
       $trade = $glc->building( type => 'Trade', id => $fdata->{"$pname"}->{tmid})->get_stored_resources();
     };
+    print "RPC count: $glc->{rpc_count}\n";
     unless ( $ok ) {
       my $error = $@;
       print $df $error, "\n";
@@ -151,6 +152,7 @@ use utf8;
     $dump_report->{"$pname"}->{ships} = $results;
     $dump_report->{"$pname"}->{supply} = $supply;
   }
+  print "RPC count end: $glc->{rpc_count}\n";;
   print $df $json->pretty->canonical->encode($dump_report);
   close($df);
 exit;
