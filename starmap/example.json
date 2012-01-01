@@ -1,0 +1,138 @@
+{
+   "2" : {
+      "info" : [
+         "Empire (Alliance) -- Planet : (0, 0) [0|0]"
+      ],
+      "data" : [
+         [
+            0,
+            0
+         ]
+      ],
+      "label" : "Alliance",
+      "rank" : 2
+   },
+   "1" : {
+      "info" : [
+         "An unexploded cow (Sea of Goats) -- b'th'n E : (-20, 187) [0|0]",
+         "cxreg (Sea of Goats) -- MarshmallowLand : (9, 338) [0|1]",
+         "botswanaland (Sea of Goats) -- Flywheel : (-125, 248) [0|1]",
+         "codon (Sea of Goats) -- Inur Cellz : (87, 309) [0|1]",
+         "zaxon (Sea of Goats) -- Butts and such : (-137, 366) [0|1]",
+         "Badenov Foria (Sea of Goats) -- Pottsylvania : (153, 283) [0|1]",
+         "Empire Name (Sea of Goats) -- Colony   7 : (355, -154) [1|0]",
+         "Empire Name (Sea of Goats) -- Colony 1 : (-151, -292) [0|-1]",
+         "Empire Name (Sea of Goats) -- Colony 2 : (-153, -282) [0|-1]",
+         "Empire Name (Sea of Goats) -- Colony 3 : (-158, -287) [0|-1]",
+         "Empire Name (Sea of Goats) -- Colony 4 : (357, -159) [1|0]",
+         "Empire Name (Sea of Goats) -- Colony 5 : (-218, 16) [0|0]",
+         "Empire Name (Sea of Goats) -- Colony 6 : (-131, -275) [0|-1]",
+         "Empire Name (Sea of Goats) -- Colony 8 : (-154, -293) [0|-1]",
+         "Empire Name (Sea of Goats) -- Home Planet : (-151, -290) [0|-1]",
+         "Nicomachea (Sea of Goats) -- Ad Ithuirn 5 : (-43, 380) [0|1]",
+         "Pudgenet (Sea of Goats) -- Jerkface Beta Prime : (26, 465) [0|1]",
+         "Avenging Pussies (Sea of Goats) -- Scaredy Pants : (-147, -277) [0|-1]",
+         "Maldova (Sea of Goats) -- Maldova : (-228, 258) [0|1]",
+         "Xaositect (Sea of Goats) -- Stellar Noise : (-7, 348) [0|1]",
+         "Confusion (Sea of Goats) -- Causes of Confusion : (-44, -448) [0|-1]",
+         "last (Sea of Goats) -- Call : (-228, -259) [0|-1]",
+         "Ysthane (Sea of Goats) -- Ysthane Prime : (-206, 252) [0|1]"
+      ],
+      "data" : [
+         [
+            -20,
+            187
+         ],
+         [
+            9,
+            338
+         ],
+         [
+            -125,
+            248
+         ],
+         [
+            87,
+            309
+         ],
+         [
+            -137,
+            366
+         ],
+         [
+            153,
+            283
+         ],
+         [
+            355,
+            -154
+         ],
+         [
+            -151,
+            -292
+         ],
+         [
+            -153,
+            -282
+         ],
+         [
+            -158,
+            -287
+         ],
+         [
+            357,
+            -159
+         ],
+         [
+            -218,
+            16
+         ],
+         [
+            -131,
+            -275
+         ],
+         [
+            -154,
+            -293
+         ],
+         [
+            -151,
+            -290
+         ],
+         [
+            -43,
+            380
+         ],
+         [
+            26,
+            465
+         ],
+         [
+            -147,
+            -277
+         ],
+         [
+            -228,
+            258
+         ],
+         [
+            -7,
+            348
+         ],
+         [
+            -44,
+            -448
+         ],
+         [
+            -228,
+            -259
+         ],
+         [
+            -206,
+            252
+         ]
+      ],
+      "label" : "Sea of Goats",
+      "rank" : 1
+   },
+}

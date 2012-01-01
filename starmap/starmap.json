@@ -1,0 +1,440 @@
+{
+   "map" : {
+      "bounds" : {
+         "y" : [
+            -500,
+            500
+         ],
+         "x" : [
+            -500,
+            500
+         ]
+      }
+   },
+   "alliances" : {
+      "11" : {
+         "info" : [
+            "Pabst (The WAUSAU PAC) -- Cap : (-78,-29) [0|0]"
+         ],
+         "alliance_id" : "11",
+         "data" : [
+            [
+               "-78",
+               "-29"
+            ]
+         ],
+         "label" : "The WAUSAU PAC"
+      },
+      "-9" : {
+         "info" : [
+            "DeLambert (DeLambert) -- Cap : (-466,-498) [-1|-1]",
+            "DeLambert (DeLambert) -- Col : (-375,-496) [-1|-1]",
+            "DeLambert (DeLambert) -- Col : (224,-496) [0|-1]",
+            "DeLambert (DeLambert) -- Col : (-220,-492) [0|-1]",
+            "DeLambert (DeLambert) -- Col : (-173,-491) [0|-1]",
+            "DeLambert (DeLambert) -- Col : (-146,-490) [0|-1]",
+            "DeLambert (DeLambert) -- Col : (173,-489) [0|-1]",
+            "DeLambert (DeLambert) -- Col : (274,-493) [1|-1]",
+            "DeLambert (DeLambert) -- Col : (-377,-243) [-1|0]",
+            "DeLambert (DeLambert) -- Col : (-227,-250) [0|0]",
+            "DeLambert (DeLambert) -- Col : (-212,-247) [0|0]",
+            "DeLambert (DeLambert) -- Col : (-185,-248) [0|0]",
+            "DeLambert (DeLambert) -- Col : (-110,-247) [0|0]",
+            "DeLambert (DeLambert) -- Col : (-49,-249) [0|0]",
+            "DeLambert (DeLambert) -- Col : (-2,-248) [0|0]",
+            "DeLambert (DeLambert) -- Col : (269,-246) [1|0]",
+            "DeLambert (DeLambert) -- Col : (476,-250) [1|0]",
+            "DeLambert (DeLambert) -- Col : (-406,256) [-1|1]",
+            "DeLambert (DeLambert) -- Col : (-241,254) [0|1]",
+            "DeLambert (DeLambert) -- Col : (282,252) [1|1]"
+         ],
+         "alliance_id" : "-9",
+         "data" : [
+            [
+               "-466",
+               "-498"
+            ],
+            [
+               "-375",
+               "-496"
+            ],
+            [
+               "224",
+               "-496"
+            ],
+            [
+               "-220",
+               "-492"
+            ],
+            [
+               "-173",
+               "-491"
+            ],
+            [
+               "-146",
+               "-490"
+            ],
+            [
+               "173",
+               "-489"
+            ],
+            [
+               "274",
+               "-493"
+            ],
+            [
+               "-377",
+               "-243"
+            ],
+            [
+               "-227",
+               "-250"
+            ],
+            [
+               "-212",
+               "-247"
+            ],
+            [
+               "-185",
+               "-248"
+            ],
+            [
+               "-110",
+               "-247"
+            ],
+            [
+               "-49",
+               "-249"
+            ],
+            [
+               "-2",
+               "-248"
+            ],
+            [
+               "269",
+               "-246"
+            ],
+            [
+               "476",
+               "-250"
+            ],
+            [
+               "-406",
+               "256"
+            ],
+            [
+               "-241",
+               "254"
+            ],
+            [
+               "282",
+               "252"
+            ]
+         ],
+         "label" : "DeLambert"
+      },
+      "26" : {
+         "info" : [
+            "Reavers (The bond) -- Cap : (-105,-496) [0|-1]"
+         ],
+         "alliance_id" : "26",
+         "data" : [
+            [
+               "-105",
+               "-496"
+            ]
+         ],
+         "label" : "The bond"
+      },
+      "17" : {
+         "info" : [
+            "testymctest (Dongitania) -- Cap : (-420,-497) [-1|-1]"
+         ],
+         "alliance_id" : "17",
+         "data" : [
+            [
+               "-420",
+               "-497"
+            ]
+         ],
+         "label" : "Dongitania"
+      },
+      "-7" : {
+         "info" : [
+            "Diablotin (Diablotin) -- Col : (355,-395) [1|-1]",
+            "Diablotin (Diablotin) -- Col : (-266,-282) [-1|-1]",
+            "Diablotin (Diablotin) -- Col : (416,-184) [1|0]",
+            "Diablotin (Diablotin) -- Col : (-222,20) [0|0]",
+            "Diablotin (Diablotin) -- Col : (-445,181) [-1|0]",
+            "Diablotin (Diablotin) -- Col : (-192,289) [0|1]",
+            "Diablotin (Diablotin) -- Cap : (418,435) [1|1]",
+            "Diablotin (Diablotin) -- Col : (-274,473) [-1|1]"
+         ],
+         "alliance_id" : "-7",
+         "data" : [
+            [
+               "355",
+               "-395"
+            ],
+            [
+               "-266",
+               "-282"
+            ],
+            [
+               "416",
+               "-184"
+            ],
+            [
+               "-222",
+               "20"
+            ],
+            [
+               "-445",
+               "181"
+            ],
+            [
+               "-192",
+               "289"
+            ],
+            [
+               "418",
+               "435"
+            ],
+            [
+               "-274",
+               "473"
+            ]
+         ],
+         "label" : "Diablotin"
+      },
+      "0" : {
+         "info" : [
+            "Rylian Order (Unalligned) -- Cap : (417,-497) [1|-1]"
+         ],
+         "alliance_id" : "0",
+         "data" : [
+            [
+               "417",
+               "-497"
+            ]
+         ],
+         "label" : "Unalligned"
+      },
+      "16" : {
+         "info" : [
+            "Instrumentality (The Big Dealio) -- Cap : (257,416) [1|1]"
+         ],
+         "alliance_id" : "16",
+         "data" : [
+            [
+               "257",
+               "416"
+            ]
+         ],
+         "label" : "The Big Dealio"
+      },
+      "29" : {
+         "info" : [
+            "Sweden (Frozen Waste) -- Cap : (-46,-490) [0|-1]"
+         ],
+         "alliance_id" : "29",
+         "data" : [
+            [
+               "-46",
+               "-490"
+            ]
+         ],
+         "label" : "Frozen Waste"
+      },
+      "-3" : {
+         "info" : [
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-424,-497) [-1|-1]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-409,-499) [-1|-1]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-198,-499) [0|-1]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (252,-500) [1|-1]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-425,-248) [-1|0]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-199,-247) [0|0]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (251,-250) [1|0]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-408,154) [-1|0]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (223,151) [0|0]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-326,248) [-1|1]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Cap : (318,249) [1|1]",
+            "Trelvestian Sveitarfélagi (Trelvestian Sveitarfélagi) -- Col : (-199,254) [0|1]"
+         ],
+         "alliance_id" : "-3",
+         "data" : [
+            [
+               "-424",
+               "-497"
+            ],
+            [
+               "-409",
+               "-499"
+            ],
+            [
+               "-198",
+               "-499"
+            ],
+            [
+               "252",
+               "-500"
+            ],
+            [
+               "-425",
+               "-248"
+            ],
+            [
+               "-199",
+               "-247"
+            ],
+            [
+               "251",
+               "-250"
+            ],
+            [
+               "-408",
+               "154"
+            ],
+            [
+               "223",
+               "151"
+            ],
+            [
+               "-326",
+               "248"
+            ],
+            [
+               "318",
+               "249"
+            ],
+            [
+               "-199",
+               "254"
+            ]
+         ],
+         "label" : "Trelvestian Sveitarfélagi"
+      },
+      "25" : {
+         "info" : [
+            "TheKi (Jazz) -- Cap : (270,251) [1|1]"
+         ],
+         "alliance_id" : "25",
+         "data" : [
+            [
+               "270",
+               "251"
+            ]
+         ],
+         "label" : "Jazz"
+      },
+      "28" : {
+         "info" : [
+            "Jeton (France Télécom) -- Cap : (-81,-480) [0|-1]"
+         ],
+         "alliance_id" : "28",
+         "data" : [
+            [
+               "-81",
+               "-480"
+            ]
+         ],
+         "label" : "France Télécom"
+      },
+      "12" : {
+         "info" : [
+            "The Tsurani Empire (The Orion Confederation) -- Cap : (2,-356) [0|-1]"
+         ],
+         "alliance_id" : "12",
+         "data" : [
+            [
+               "2",
+               "-356"
+            ]
+         ],
+         "label" : "The Orion Confederation"
+      },
+      "15" : {
+         "info" : [
+            "Deeno (East Lacuna Trading Company) -- Cap : (424,70) [1|0]"
+         ],
+         "alliance_id" : "15",
+         "data" : [
+            [
+               "424",
+               "70"
+            ]
+         ],
+         "label" : "East Lacuna Trading Company"
+      },
+      "20" : {
+         "info" : [
+            "The Empire of Butt (The Alliance of Butt) -- Cap : (-195,-498) [0|-1]"
+         ],
+         "alliance_id" : "20",
+         "data" : [
+            [
+               "-195",
+               "-498"
+            ]
+         ],
+         "label" : "The Alliance of Butt"
+      },
+      "8" : {
+         "info" : [
+            "2bob (BOB UNITED) -- Cap : (13,-76) [0|0]"
+         ],
+         "alliance_id" : "8",
+         "data" : [
+            [
+               "13",
+               "-76"
+            ]
+         ],
+         "label" : "BOB UNITED"
+      },
+      "4" : {
+         "info" : [
+            "Khenn (Lacunamatata) -- Cap : (11,2) [0|0]"
+         ],
+         "alliance_id" : "4",
+         "data" : [
+            [
+               "11",
+               "2"
+            ]
+         ],
+         "label" : "Lacunamatata"
+      },
+      "31" : {
+         "info" : [
+            "The Human Empire (Human Empire Union) -- Cap : (225,-497) [0|-1]"
+         ],
+         "alliance_id" : "31",
+         "data" : [
+            [
+               "225",
+               "-497"
+            ]
+         ],
+         "label" : "Human Empire Union"
+      },
+      "-1" : {
+         "info" : [
+            "Sābēn Demesne (Sābēn Demesne) -- Col : (-394,-494) [-1|-1]",
+            "Sābēn Demesne (Sābēn Demesne) -- Cap : (416,256) [1|1]"
+         ],
+         "alliance_id" : "-1",
+         "data" : [
+            [
+               "-394",
+               "-494"
+            ],
+            [
+               "416",
+               "256"
+            ]
+         ],
+         "label" : "Sābēn Demesne"
+      }
+   }
+}
