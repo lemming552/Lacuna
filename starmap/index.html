@@ -26,7 +26,6 @@
     </div>
 
     <p style="clear:left">Click and drag on either map to zoom in or out.  Click on two points to calculate distance. <a href="">Reset Zoom</a> <a href="sectors.html">Highlight Zones</a></p>
-    <p style="clear:left">For questions about the map or to request a refresh, look for "Empire Name" in-game.</p>
     <span id="clickdata"></span>
     <p id="choices">Show:</p>
     <div>
@@ -38,13 +37,13 @@
 $(function () {
 
     function getData() {
-        $.getJSON("/starmap.json", function(alliances) {
+        $.getJSON("/starmap/starmap.json", function(starmap) {
 
             // TODO chart markings to show zones
 
             var label_map = {};
-            for (var key in alliances) {
-                label_map[alliances[key].label] = key;
+            for (var key in starmap.alliances) {
+                label_map[starmap.alliances[key].label] = key;
             }
 
             // insert checkboxes 
@@ -61,10 +60,10 @@ $(function () {
 
 
             var choiceContainer = $("#choices");
-            var keylist = keys(alliances).sort(function(a,b) {return alliances[a].rank - alliances[b].rank});
+            var keylist = keys(starmap.alliances).sort(function(a,b) {return starmap.alliances[a].id - starmap.alliances[b].id});
             for (var idx in keylist) {
                 var key = keylist[idx];
-                var val = alliances[key];
+                var val = starmap.alliances[key];
                 if (key == '-2') {
                     // by default only check the Diablotin
                     choiceContainer.append('<br/><input type="checkbox" name="' + key +
@@ -91,14 +90,14 @@ $(function () {
 
                 choiceContainer.find("input:checked").each(function () {
                     var key = $(this).attr("name");
-                    if (key && alliances[key]) {
-                        if (alliances[key].color != undefined) {
-                            data.push(alliances[key]);
+                    if (key && starmap.alliances[key]) {
+                        if (starmap.alliances[key].color != undefined) {
+                            data.push(starmap.alliances[key]);
                         }
                         else {
-                            alliances[key].color = color_i;
+                            starmap.alliances[key].color = color_i;
                             color_i++;
-                            data.push(alliances[key]);
+                            data.push(starmap.alliances[key]);
                         }
                     }
                 });
@@ -112,17 +111,17 @@ $(function () {
                     lines: { show: false },
                     points: { show: true }
                 },
-                xaxis: { ticks: 10, min: -1500, max: 1500 },
+                xaxis: { ticks: 10, min: starmap.map.bounds.x[0], max: starmap.map.bounds.x[1] },
                 selection: { mode: "xy" },
                 grid: { hoverable: true, clickable: true },
-                yaxis: { min: -1500, max: 1500 }
+                yaxis: { min: starmap.map.bounds.y[0], max: starmap.map.bounds.y[1] }
             };
 
             // now connect the two
 
             function getInfo(series, index) {
                 // TODO - look up info string from alliance info
-                return alliances[label_map[series]].info[index];
+                return starmap.alliances[label_map[series]].info[index];
             };
 
             var plot = {};
