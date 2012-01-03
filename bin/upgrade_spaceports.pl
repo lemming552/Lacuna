@@ -25,7 +25,7 @@ use Exception::Class;
     'v|verbose',
     'planet=s@',
     'config=s',
-    'dumpfile',
+    'dumpfile=s',
     'maxlevel=i',
   );
 
@@ -56,7 +56,8 @@ use Exception::Class;
     my $planet    = $glc->body(id => $planets{$planet_name});
     my $result    = $planet->get_buildings;
     my $buildings = $result->{buildings};
-    my ($sarr) = bstats($buildings);
+    my $station = $result->{status}{body}{type} eq 'space station' ? 1 : 0;
+    my ($sarr) = bstats($buildings, $station);
     for my $bld (@$sarr) {
       printf "%7d %10s l:%2d x:%2d y:%2d\n",
                $bld->{id}, $bld->{name},
@@ -82,10 +83,10 @@ use Exception::Class;
 exit;
 
 sub bstats {
-  my ($bhash) = @_;
+  my ($bhash, $station) = @_;
 
   my $bcnt = 0;
-  my $dlevel = 0;
+  my $dlevel = $station ? 121 : 0;
   my @sarr;
   for my $bid (keys %$bhash) {
     if ($bhash->{$bid}->{name} eq "Development Ministry") {

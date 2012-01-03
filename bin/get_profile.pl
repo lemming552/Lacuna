@@ -24,7 +24,7 @@ use Exception::Class;
     'v|verbose',
     'planet=s',
     'config=s',
-    'dumpfile',
+    'dumpfile=s',
   );
 
   usage() if $opts{'h'};
