@@ -31,25 +31,25 @@ use utf8;
 
   print "A,E,Ship,D,E,Def,Win,Date\n";
   for my $battle (@$idata) {
-    printf "%s,%s,%s,%s,%s,%s,%s,%s\n",
+    printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+            $battle->{attacked_body},
+            $battle->{attacked_body_id},
+            $battle->{attacked_empire},
+            $battle->{attacked_empire_id},
             $battle->{attacking_body},
+            $battle->{attacking_body_id},
             $battle->{attacking_empire},
+            $battle->{attacking_empire_id},
             $battle->{attacking_unit},
             $battle->{date},
             $battle->{defending_body},
+            $battle->{defending_body_id},
             $battle->{defending_empire},
+            $battle->{defending_empire_id},
             $battle->{defending_unit},
-            $battle->{victory_to};
+            $battle->{victory_to},
   }
 exit;
-
-sub srtname {
-  my $abit = $a;
-  my $bbit = $b;
-  $abit =~ s/ //g;
-  $bbit =~ s/ //g;
-  $abit cmp $bbit;
-}
 
 sub get_json {
   my ($file) = @_;

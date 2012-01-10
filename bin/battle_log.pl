@@ -65,10 +65,19 @@ use utf8;
   print "Test: $test->{docks_available}\n";
 
   my @logs;
-  my ($page, $done);
+  my $page = 1;
+  my $done;
   while(!$done) {
-    print ++$page,":";
-    my $logs = $space_port->view_battle_logs($page);
+    my $logs;
+    my $ok = eval { $logs = $space_port->view_battle_logs($page) };
+    if ($ok) {
+      print $page++,":";
+    }
+    else {
+      print "\nError: $@. ";
+      print "Sleeping 60\n";
+      sleep 60;
+    }
     push @logs, @{$logs->{battle_log}};
     $done = 25 * $page >= $logs->{number_of_logs};
   }
@@ -78,6 +87,7 @@ use utf8;
   close $df;
   my $rpc_cnt_end = $glc->{rpc_count};
   print "RPC Count of $rpc_cnt_end\n";
+  undef $glc;
 exit;
 
 sub get_bld_pnt {
