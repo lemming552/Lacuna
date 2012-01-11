@@ -2,12 +2,12 @@
 use strict;
 use warnings;
 use FindBin;
-use lib "$FindBin::Bin/../lib";
 use List::Util            (qw(first));
 use Getopt::Long          (qw(GetOptions));
-use Games::Lacuna::Client ();
 use DateTime;
 use JSON;
+use lib "$FindBin::Bin/../lib";
+use Games::Lacuna::Client ();
 use utf8;
 
   my @planets;
@@ -342,7 +342,8 @@ sub setup_yhash {
     }
     else {
       print "$planet: We hope to build ", $yhash->{"$planet"}->{bldnum},
-          " with a reserve of ", $yhash->{"$planet"}->{reserve}, "\n" 
+          " with a reserve of ", $yhash->{"$planet"}->{reserve}, " and dockspace of ",
+          $yhash->{"$planet"}->{dockspace},"\n";
     }
   }
   print "With Setup: RPC ", $rpc_cnt, " of ", $rpc_lmt, " Limit\n";
