@@ -58,14 +58,15 @@ use utf8;
   else {
     print "Could not read $opts{layoutfile}\n";
     print "Create a JSON file with an array of hashes.\n";
-    print "[ { id => building_id, x => new_x_pos, y => new_y_pos },\n",
-          "[ { id => building_id, x => new_x_pos, y => new_y_pos },\n", 
+    print "[ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },\n",
+          "[ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },\n", 
           "...",
-          "[ { id => building_id, x => new_x_pos, y => new_y_pos } ]\n", 
+          "[ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos } ]\n", 
           "All buildings being moved must be listed.\n",
           "Do not overlap buildings.\n",
           "All parts of a Lost City or Space Station Lab must move.\n",
           "PCC and Station Command must be left at 0,0.\n";
+    exit;
   }
   my $ofh;
   open($ofh, ">", $opts{dumpfile}) || die "Could not create $opts{dumpfile}";
