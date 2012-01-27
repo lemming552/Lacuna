@@ -72,7 +72,7 @@ use utf8;
     }
   }
   my $df;
-  open($df, ">", "$opts{dumpfile}") or die "Could not open $opts{dumpfile}\n";
+  open($df, ">", "$opts{dumpfile}") or die "Could not open $opts{dumpfile} for writing\n";
 
   usage() if $opts{h} || !$opts{from} || !$opts{to} || !$ok;
 
