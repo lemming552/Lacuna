@@ -1,5 +1,6 @@
-Lemming Scripts.  Using the GLC one for any updates to the library.
-Scripts that aren't quite mature enough to be in the examples will be here.
+Lemming Scripts.  These work with the GLC library from: https://github.com/tsee/Games-Lacuna-Client
+
+Scripts that aren't quite mature enough to be in the examples at GLC will be here.
 I also don't follow the convention strictly.  I prefer --config lacuna.yml and
 my data directory lives below my active directory.
 lacuna --
