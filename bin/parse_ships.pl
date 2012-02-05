@@ -28,16 +28,17 @@ use utf8;
   unless ($idata) {
     die "Could not read $opts{input}\n";
   }
-  print "Planet,Type,Name,Task,Speed,Hold,Type,id,emp,max\n";;
+  print "Planet,Type,Name,Task,Speed,Hold,Combat,Type,id,docks,max\n";;
   for my $planet (%$idata) {
     for my $ship (@{$idata->{"$planet"}->{ships} }) {
-      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+      printf "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
                    $planet,
                    $ship->{type_human},
                    $ship->{name},
                    $ship->{task},
                    $ship->{speed},
                    $ship->{hold_size},
+                   $ship->{combat},
                    $ship->{type},
                    $ship->{id},
                    $idata->{"$planet"}->{port}->{docks_available},

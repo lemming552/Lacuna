@@ -12,16 +12,19 @@ use JSON;
 
   my %opts;
   $opts{data} = "log/ship_data.js";
+  $opts{config} = 'lacuna.yml';
 
   GetOptions(
     \%opts,
     'planet=s@',
     'data=s',
+    'config=s',
   );
 
-  my $cfg_file = shift(@ARGV) || 'lacuna.yml';
-  unless ( $cfg_file and -e $cfg_file ) {
-    $cfg_file = eval{
+  open(DUMP, ">", "$opts{data}") or die "Could not write to $opts{data}\n";
+
+  unless ( $opts{config} and -e $opts{config} ) {
+    $opts{config} = eval{
       require File::HomeDir;
       require File::Spec;
       my $dist = File::HomeDir->my_dist_config('Games-Lacuna-Client');
@@ -30,13 +33,13 @@ use JSON;
         'login.yml'
       ) if $dist;
     };
-    unless ( $cfg_file and -e $cfg_file ) {
+    unless ( $opts{config} and -e $opts{config} ) {
       die "Did not provide a config file";
     }
   }
 
   my $glc = Games::Lacuna::Client->new(
-	cfg_file => $cfg_file,
+	cfg_file => $opts{config},
         rpc_sleep => 2,
 	# debug    => 1,
   );
@@ -103,7 +106,6 @@ use JSON;
   $json = $json->pretty([1]);
   $json = $json->canonical([1]);
 
-  open(DUMP, ">", "$opts{data}") or die;
   print DUMP $json->pretty->canonical->encode($ship_hash);
   close(DUMP);
 exit;

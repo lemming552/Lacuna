@@ -41,7 +41,7 @@ use utf8;
       die "Did not provide a config file";
     }
   }
-  usage() if ($opts{h});
+  usage() if ($opts{h} or not -e $opts{layoutfile});
   if (!$opts{planet}) {
     print "Need name of planet to layout with --planet!\n";
     usage();
@@ -56,16 +56,7 @@ use utf8;
     $new_layout = $json->decode($lines);
   }
   else {
-    print "Could not read $opts{layoutfile}\n";
-    print "Create a JSON file with an array of hashes.\n";
-    print "[ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },\n",
-          "[ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },\n", 
-          "...",
-          "[ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos } ]\n", 
-          "All buildings being moved must be listed.\n",
-          "Do not overlap buildings.\n",
-          "All parts of a Lost City or Space Station Lab must move.\n",
-          "PCC and Station Command must be left at 0,0.\n";
+    usage(); # this shouldn't happen
     exit;
   }
   my $ofh;
@@ -107,6 +98,17 @@ Usage: $0 CONFIG_FILE
        --dumpfile       Output file, default log/rearrange.js
        --config         Lacuna Config, default lacuna.yml
 
-END_USAGE
+       Create a JSON file with an array of hashes.
 
+    [ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },
+    [ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },
+    ...
+    [ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos } ]
+
+       All buildings being moved must be listed.
+       Do not overlap buildings.
+       All parts of a Lost City or Space Station Lab must move.
+       PCC and Station Command must be left at 0,0
+
+END_USAGE
 }
