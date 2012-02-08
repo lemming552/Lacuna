@@ -148,6 +148,7 @@ for my $name ( sort keys %planets ) {
         $parliament->cast_vote( $prop->{id}, $vote );
         print "\n\n";
     }
+sleep 2;
 }
 
 exit;

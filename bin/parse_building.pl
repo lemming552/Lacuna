@@ -31,10 +31,14 @@ GetOptions(
 #  print $json->pretty->encode($bld_data->{Oslo});
 
 
-  print "Planet,Name,lvl,x,y,lvl2b,bldid\n";
+  print "Planet,Name,lvl,x,y,lvl2b,bldid,upgrade,working\n";
   for my $planet (sort keys %$bld_data) {
     next if $planet eq "planets";
     for my $bldid (keys %{$bld_data->{"$planet"}}) {
+      my $working = defined($bld_data->{"$planet"}->{"$bldid"}->{work}) ?
+                      $bld_data->{"$planet"}->{"$bldid"}->{work}->{seconds_remaining} : "";
+      my $upgrade = defined($bld_data->{"$planet"}->{"$bldid"}->{pending_build}) ?
+                      $bld_data->{"$planet"}->{"$bldid"}->{pending_build}->{seconds_remaining} : "";
       print join(",",
           $planet,
           $bld_data->{"$planet"}->{"$bldid"}->{name},
@@ -42,7 +46,7 @@ GetOptions(
           $bld_data->{"$planet"}->{"$bldid"}->{x},
           $bld_data->{"$planet"}->{"$bldid"}->{y},
           $bld_data->{"$planet"}->{"$bldid"}->{leveled},
-          $bldid
+          $bldid, $upgrade, $working
           );
       print "\n";
     }

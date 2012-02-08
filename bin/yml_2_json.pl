@@ -1,5 +1,5 @@
-# Stupid script for converting yaml files to json
 #!/usr/bin/perl
+# Stupid script for converting yaml files to json
 use strict;
 use warnings;
 use YAML;

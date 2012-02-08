@@ -111,7 +111,7 @@ foreach my $planet_id ( sort keys %$planets ) {
     } values %$buildings;
 
     $capacity = "0" if ($type eq "happiness");
-    printf "%15s - %9s - %9d/%9d %4d:%4d %9d rate",
+    printf "%15s - %9s - %11d/%11d %4d:%4d %9d rate",
                        $name, $label, $stored, $capacity, $time, $left, $hour;
     print " UPGRADING..." if @already;
     print "\n";

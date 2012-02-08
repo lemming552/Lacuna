@@ -175,6 +175,9 @@ use utf8;
           plans => $sent_plans,
         };
       }
+      else {
+        last;
+      }
       last unless (scalar @{$send_plans} > 0);
     }
   }
@@ -197,6 +200,7 @@ exit;
 sub send_ship {
   my ($plan_list, $pcargo_each, $ship) = @_;
 
+  return (0,0) unless (scalar @$plan_list > 0);
   my $send_plans = $plan_list;
   my $ship_id;
   if ($ship) {
@@ -204,6 +208,9 @@ sub send_ship {
     if ( $ship->{hold_size} < $cargo_req ) {
       my @left    = splice(@$plan_list, 0, int($ship->{hold_size}/$pcargo_each));
       $send_plans = \@left;
+    }
+    else {
+      $plan_list = [];
     }
     $ship_id = $ship->{id};
   }
@@ -230,7 +237,7 @@ sub send_ship {
              : ()
     )};
     if ($@) {
-      die "$@ error!\n";
+      print "$@ error!\n";
     }
     printf "Pushed %d plans leaving %d.\n",
            scalar @$send_plans, scalar @$plan_list;

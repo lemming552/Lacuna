@@ -12,16 +12,16 @@ use utf8;
 binmode STDOUT, ":utf8";
 
 my $probe_file = "data/probe_data_cmb.js";
-my $planet = '';
+my @planet;
 my $help;
 
 GetOptions(
-  'planet=s'     => \$planet,
+  'planet=s@'     => \@planet,
   'input=s'      => \$probe_file,
   'help'         => \$help,
 );
   
-  usage() if ($help);
+  usage() if ($help) or !@planet;
 
   my $json = JSON->new->utf8(1);
 
@@ -39,25 +39,21 @@ GetOptions(
     die;
   }
 
-  my @fields = ( "Name", "ID", "Sname", "O", "X", "Y", "Type", "Img", "Own");
-  printf "%s\t" x scalar @fields, @fields;
-  print "\n";
-  for $bod (@$bodies) {
-    next if ($bod->{name} ne "$planet");
+  my @fields = ( "Name", "ID", "Sname", "O", "X", "Y", "Type", "Size", "Own");
+  printf "%20s %6s %20s %1s %5s %5s %14s %2s %s\n", @fields;
+  my @silly;
+  for $bod (sort @$bodies) {
+    next unless (grep { $bod->{name} eq $_ } @planet);
     unless (defined($bod->{empire})) {
       $bod->{empire}->{name} = "Unknown";
     }
-#    else {
-#      foreach my $key (keys %{$bod->{empire}}) {
-#        print "$key: ", $bod->{empire}->{$key},"\n";
-#      }
-#    }
+    push @silly, $bod;
+  }
 
-    printf "%s\t" x ( scalar @fields),
+  for $bod (sort {$a->{name} cmp $b->{name} } @silly) {
+    printf "%20s %6s %20s %1s %5d %5d %14s %2d %s\n", 
            $bod->{name}, $bod->{id}, $bod->{star_name}, $bod->{orbit}, $bod->{x}, $bod->{y},
-           $bod->{type}, $bod->{image}, $bod->{empire}->{name};
-    print "\n";
-    last;
+           $bod->{image}, $bod->{size}, $bod->{empire}->{name};
   }
 exit;
 
@@ -67,7 +63,7 @@ Usage: $0 [options]
 
 Options:
   --help      - Prints this out
-  --p probe   - probe_file,
+  --input     - probe_file,
   --planet    - Planet Name to look for
 END
  exit 1;

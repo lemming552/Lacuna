@@ -16,7 +16,7 @@ use Date::Format;
 
   my $planet_name;
   my $target;
-  my $assignment;
+  my $task;
   my $min_off = 0;
   my $min_def = 0;
   my $max_off = 10000;
@@ -27,21 +27,30 @@ use Date::Format;
                       "_$random_bit.js";
   my $fail_break = 3;
   my $fail = 0;
+  my $sleep = 2;
 
   GetOptions(
     'from=s'       => \$planet_name,
     'fail_break=i' => \$fail_break,
-    'dumpfile=s'  => \$dumpfile,
+    'dumpfile=s'   => \$dumpfile,
     'target=s'     => \$target,
-    'assignment=s' => \$assignment,
+    'task=s'       => \$task,
     'min_off=i'    => \$min_off,
     'min_def=i'    => \$min_def,
     'max_off=i'    => \$max_off,
     'max_def=i'    => \$max_def,
     'number=i'     => \$number,
+    'sleep=i'      => \$sleep,
   );
 
-  usage() if !$planet_name || !$target || !$assignment;
+  usage() if !$planet_name || !$target || !$task;
+
+  my $task_list = task_list();
+  unless (grep { $_ =~ /^$task/i } @{$task_list}) {
+    print "$task not valid\n";
+    print join("\n", @{$task_list}),"\n";
+    die "You must pick a valid task\n";
+  }
 
   my $cfg_file = shift(@ARGV) || 'lacuna.yml';
   unless ( $cfg_file and -e $cfg_file ) {
@@ -66,7 +75,7 @@ use Date::Format;
   my $glc = Games::Lacuna::Client->new(
                  cfg_file => $cfg_file,
                  prompt_captcha => 1,
-                 rpc_sleep => 2,
+                 rpc_sleep => $sleep,
                  # debug    => 1,
                );
 
@@ -104,17 +113,17 @@ use Date::Format;
                    $spy->{defense_rating} >= $min_def and
                    $spy->{defense_rating} <= $max_def);
       my @missions = grep {
-          $_->{task} =~ /^$assignment/i
+          $_->{task} =~ /^$task/i
       } @{ $spy->{possible_assignments} };
       next if !@missions;
       if ( @missions > 1 ) {
-        warn "Supplied --assignment matches multiple possible assignments - skipping!\n";
+        warn "Supplied --task matches multiple possible tasks - skipping!\n";
         for my $mission (@missions) {
           warn sprintf "\tmatches: %s\n", $mission->{task};
         }
         last;
       }
-      $assignment = $missions[0]->{task};
+      $task = $missions[0]->{task};
       push @trim_spies, $spy;
     }
     push @spies, @trim_spies;
@@ -137,7 +146,7 @@ use Date::Format;
     my $return;
     
     eval {
-        $return = $intel->assign_spy( $spy->{id}, $assignment );
+        $return = $intel->assign_spy( $spy->{id}, $task );
     };
     if ($@) {
       warn "Error: $@\n";
@@ -160,12 +169,36 @@ use Date::Format;
   undef $glc;
 exit;
 
+sub task_list {
+  my $possible = [
+"Idle",
+"Counter Espionage",
+"Security Sweep",
+"Gather Resource Intelligence",
+"Gather Empire Intelligence",
+"Gather Operative Intelligence",
+"Hack Network 19",
+"Sabotage Probes",
+"Rescue Comrades",
+"Sabotage Resources",
+"Appropriate Resources",
+"Assassinate Operatives",
+"Sabotage Infrastructure",
+"Incite Mutiny",
+"Abduct Operatives",
+"Appropriate Technology",
+"Incite Rebellion",
+"Incite Insurrection"
+];
+  return $possible;
+}
+
 sub usage {
   die <<"END_USAGE";
 Usage: $0 CONFIG_FILE
     --from       PLANET
     --target     PLANET
-    --assignment MISSION
+    --task       MISSION
     --min_def    Minimum Defense Rating
     --min_off    Minimum Offense Rating
     --max_def    Maximum Defense Rating
@@ -178,7 +211,7 @@ CONFIG_FILE  defaults to 'lacuna.yml'
 
 --target is the planet that your spy is assigned to.
 
---assignment must match one of the missions listed in the API docs:
+--task must match one of the missions listed in the API docs:
     http://us1.lacunaexpanse.com/api/Intelligence.html
 
 It only needs to be long enough to uniquely match a single available mission,

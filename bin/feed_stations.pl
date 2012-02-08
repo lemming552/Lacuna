@@ -155,6 +155,7 @@ use utf8;
   print "RPC count end: $glc->{rpc_count}\n";;
   print $df $json->pretty->canonical->encode($dump_report);
   close($df);
+  undef $glc;
 exit;
 
 sub update_inv {
@@ -200,32 +201,49 @@ sub load_ship {
   my ($ship, $supply, $station) = @_;
 
   my @base_types = qw(food ore water energy);
-  my %needs; my $sum = 0; my $t;
-  for $t (@base_types) {
-    my $need_cap = $station->{"$t\_capacity"};
-    my $need_has = $station->{"$t\_stored"};
-    if ( $need_has > $need_cap ) {
-      $needs{$t} = 0;
+  my @ntypes = @base_types;
+  my %needs;
+  my %carry = (
+    food => 0, ore => 0, water => 0, energy => 0,
+  );
+  my $carry_sum = 0;
+  my $extra_space = 0;
+  my $t;
+  while (scalar @ntypes and $carry_sum < $ship->{cap}) {
+    my $portion = int(($ship->{cap} - $carry_sum)/(scalar @ntypes));
+    my @tmp_types = @ntypes;
+    @ntypes = ();
+    for $t (@tmp_types) {
+      my $need_cap = $station->{"$t\_capacity"};
+      my $need_has = $station->{"$t\_stored"};
+      if ( $need_has >= $need_cap ) {
+        $needs{$t} = 0;
+        $carry{$t} = 0;
+      }
+      else {
+        $needs{$t} = $need_cap - $need_has;
+        $carry{$t} += ($needs{$t} > $portion) ? $portion : $needs{$t};
+        $carry{$t} = $needs{$t} if ($carry{$t} > $needs{$t});
+        if ($carry{$t} < $needs{$t}) {
+          push @ntypes, $t;
+        }
+      }
     }
-    else {
-      $needs{$t} = $need_cap - $need_has;
-      $sum += $needs{$t};
-    }
-  }
-  if ($sum > $ship->{cap}) {
-    print "$station->{name} wants $sum, $ship->{name} can only carry $ship->{cap}.\n";
-    my $partial = int($ship->{cap}/4);
-    my $new_sum = 0;
+    $carry_sum = 0;
     for $t (@base_types) {
-      $needs{$t} = $partial if ($partial < $needs{$t});
-      $new_sum += $needs{$t};
+      $carry_sum += $carry{$t};
     }
+#    printf "F: %6d; O: %6d; W: %6d; E: %6d = T: %6d Need: %d\n",
+#           $carry{food}, $carry{ore},
+#           $carry{water}, $carry{energy},
+#           $carry_sum, scalar @ntypes;
   }
+
   my $send = {};
-  $send->{water} = $supply->{water} > $needs{water} ?
-                   $needs{water} : $supply->{water};
-  $send->{energy} = $supply->{energy} > $needs{energy} ?
-                    $needs{energy} : $supply->{energy};
+  $send->{water} = $supply->{water} > $carry{water} ?
+                   $carry{water} : $supply->{water};
+  $send->{energy} = $supply->{energy} > $carry{energy} ?
+                    $carry{energy} : $supply->{energy};
 
   my @foods = food_types();
   my @ores  = ore_types();
@@ -233,13 +251,13 @@ sub load_ship {
   my $ore_total  = total_of(\@ores,  $supply);
 
   for my $food (@foods) {
-    my $sfood = int($needs{food} * $supply->{$food}/$food_total);
+    my $sfood = int($carry{food} * $supply->{$food}/$food_total);
     if ($sfood > 100) {
       $send->{$food} = $sfood;
     }
   }
   for my $ore (@ores) {
-    my $sore = int($needs{ore} * $supply->{$ore}/$ore_total);
+    my $sore = int($carry{ore} * $supply->{$ore}/$ore_total);
     if ($sore > 100) {
       $send->{$ore} = $sore;
     }

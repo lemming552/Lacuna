@@ -13,7 +13,7 @@ use JSON;
 my $ships_per_page;
 my @specs = qw( combat hold_size max_occupants speed stealth );
 my %opts;
-$opts{data} = "data/data_docked.js";
+$opts{data} = "log/docked_ships.js";
 
 GetOptions(
     \%opts,
@@ -43,6 +43,7 @@ unless ( $cfg_file and -e $cfg_file ) {
 
 my $client = Games::Lacuna::Client->new(
 	cfg_file => $cfg_file,
+        rpc_sleep => 2,
 	# debug    => 1,
 );
 

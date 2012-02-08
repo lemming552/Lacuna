@@ -63,7 +63,9 @@ GetOptions(
       last if $ok;
       sleep 60;
     }
-    push @observatories, grep { $buildings->{$_}->{url} eq '/observatory' } keys %$buildings;
+    push @observatories,
+         grep { $buildings->{$_}->{url} eq '/observatory' and $buildings->{$_}->{efficiency} == 100 }
+         keys %$buildings;
     sleep 2;
   }
 

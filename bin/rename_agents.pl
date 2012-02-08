@@ -120,17 +120,21 @@ use Exception::Class;
             grep { $_ ne $spy_r->{name} } @{$anames->{$pname}->{name}};
         }
       }
-      for my $spy_r ( @spies ) {
+      else {
+        @{$anames->{$pname}->{name}} = sort { $a cmp $b } @{$anames->{$pname}->{name}};
+      }
+      for my $spy_r ( sort { $a->{id} <=> $b->{id} } @spies ) {
         my $sleep_flg = 0;
         my $spy_id = $spy_r->{'id'};
         my $spy_name = $spy_r->{'name'};
         my $new_name = $spy_name;
         if ($opts{all} or $spy_name =~ /agent/i or
             lc(substr($spy_name,0,1)) ne lc($anames->{$pname}->{init})) {
-          $new_name =
-             splice(@{$anames->{$pname}->{name}}, rand(@{$anames->{$pname}->{name}}), 1);
+          my $pos = $opts{all} ? 1 : rand(@{$anames->{$pname}->{name}});
+          $new_name = (@{$anames->{$pname}->{name}}) ?
+             splice(@{$anames->{$pname}->{name}}, $pos , 1) : "";
           if (!$new_name or length($new_name) < 3) {
-            $new_name = "Agent ".$anames->{$pname}->{init}.$spy_id;
+            $new_name = "zz".$anames->{$pname}->{init}.sprintf("%06d",$spy_id);
           }
           if ($spy_name ne $new_name) {
             my $ok;
@@ -173,7 +177,7 @@ use Exception::Class;
         else {
           print "$spy_name  $loffdef continues $task on $cplanet.\n";
         }
-        sleep 2 if $sleep_flg;
+        sleep 1 if $sleep_flg;
       }
     }
   }
