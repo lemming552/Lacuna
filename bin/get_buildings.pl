@@ -18,6 +18,8 @@ use Exception::Class;
         config => "lacuna.yml",
         dumpfile => "data/data_builds.js",
         station => 0,
+        shipyard => 0,
+        shipfile => "data/shipyards.js",
   );
 
   GetOptions(\%opts,
@@ -27,6 +29,8 @@ use Exception::Class;
     'config=s',
     'dumpfile=s',
     'station',
+    'shipyard',
+    'shipfile=s',
   );
 
   usage() if $opts{'h'};
@@ -39,7 +43,12 @@ use Exception::Class;
   my $json = JSON->new->utf8(1);
   $json = $json->pretty([1]);
   $json = $json->canonical([1]);
-  open(OUTPUT, ">", $opts{'dumpfile'}) || die "Could not open $opts{'dumpfile'}";
+  if ($opts{shipyard} ne '0') {
+    open(OUTPUT, ">", $opts{'shipfile'}) || die "Could not open $opts{'shipfile'}";
+  }
+  else {
+    open(OUTPUT, ">", $opts{'dumpfile'}) || die "Could not open $opts{'dumpfile'}";
+  }
 
   my $status;
   my $empire = $glc->empire->get_status->{empire};
@@ -57,8 +66,18 @@ use Exception::Class;
 #      next;
 #    }
     my $buildings = $result->{buildings};
-    foreach my $bldid (keys %$buildings) {
+    my @keys = (keys %$buildings);
+    for my $bldid (@keys) {
       $buildings->{$bldid}->{leveled} = $buildings->{$bldid}->{level};
+      if ($opts{shipyard}) {
+        if ( $buildings->{$bldid}->{name} ne 'Shipyard' ) {
+          delete $buildings->{$bldid};
+        }
+        else {
+          $buildings->{$bldid}->{maxq} = $buildings->{$bldid}->{level};
+          $buildings->{$bldid}->{reserve} = 10;
+        }
+      }
     }
     $status->{$planet_name} = $buildings;
   }
@@ -84,6 +103,8 @@ Options:
   --planet <name>    - Specify planet
   --dumpfile         - data dump for all the info we don't print
   --station          - include space stations in listing
+  --shipyard         - instead, output a shipyard file for use of build_ships.pl
+  --shipfile         - Default shipyards.js
 END
   exit 1;
 }
