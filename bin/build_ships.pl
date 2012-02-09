@@ -28,8 +28,8 @@ use utf8;
     'help'      => \$help,
     'number=i'  => \$number,
     'noreserve' => \$noreserve,
-    'time=i' => \$time,
-    'sleep=i' => \$rpcsleep,
+    'time=i'    => \$time,
+    'sleep=i'   => \$rpcsleep,
   );
   
   my $glc = Games::Lacuna::Client->new(
@@ -71,7 +71,7 @@ use utf8;
   my $end_dt = DateTime->now;
   if ($time) {
     $end_dt->add(seconds => $time);
-    print "$time\n";
+#    print "$time\n";
     print "Builds start: ", $beg_dt->hms, "\n";
     print "Terminate at: ", $end_dt->hms, "\n";
   }
@@ -87,9 +87,15 @@ use utf8;
     my @del_planet;
     $not_done = 0;
     my $check_dt = DateTime->now;
-    if ($time && $check_dt > $end_dt) {
-      print "Finished Time duration\n";
-      $not_done = 0; last;
+    if ($time) {
+      if ($check_dt > $end_dt) {
+        print "Finished Time duration\n";
+        $not_done = 0; last;
+      }
+      if ($sleep_flg && $resume_dt > $end_dt) {
+        print "Shipyards will be busy past scheduled end time\n";
+        $not_done = 0; last;
+      }
     }
     if ($sleep_flg && $resume_dt > $check_dt) {
       my $sleep_num = $resume_dt - $check_dt;
