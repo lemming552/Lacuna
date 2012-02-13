@@ -100,10 +100,14 @@ Usage: $0 CONFIG_FILE
 
        Create a JSON file with an array of hashes.
 
-    [ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },
-    [ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos },
-    ...
-    [ { \"id\" : building_id, \"x\" : new_x_pos, \"y\" : new_y_pos } ]
+    [
+      { \"id\" : BUILDING_ID, \"x\" : NEW_X_POS, \"y\" : NEW_Y_POS },
+      { \"id\" : BUILDING_ID, \"x\" : NEW_X_POS, \"y\" : NEW_Y_POS },
+      ...
+      { \"id\" : BUILDING_ID, \"x\" : NEW_X_POS, \"y\" : NEW_Y_POS }
+    ]
+
+  Note: id, x, and y are the variable names.  
 
        All buildings being moved must be listed.
        Do not overlap buildings.
