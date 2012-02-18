@@ -209,7 +209,7 @@ sub load_ship {
   my $carry_sum = 0;
   my $extra_space = 0;
   my $t;
-  while (scalar @ntypes and $carry_sum < $ship->{cap}) {
+  while (scalar @ntypes and $carry_sum < ($ship->{cap} - 4)) {
     my $portion = int(($ship->{cap} - $carry_sum)/(scalar @ntypes));
     my @tmp_types = @ntypes;
     @ntypes = ();
