@@ -95,9 +95,9 @@ use utf8;
           $loop = 0;
           last;
         }
-#        else {
-#          print "Ship: $ship->{name}:$ship->{id}\n";
-#        }
+        else {
+          print "Ship: $ship->{name}:$ship->{id}\n";
+        }
         $stations->{$stid} =
           load_station($station) unless defined($stations->{$stid});
         if ($stations->{$stid}->{done} ) {
@@ -209,7 +209,7 @@ sub load_ship {
   my $carry_sum = 0;
   my $extra_space = 0;
   my $t;
-  while (scalar @ntypes and $carry_sum < $ship->{cap}) {
+  while (scalar @ntypes and $carry_sum < ($ship->{cap} - 4)) {
     my $portion = int(($ship->{cap} - $carry_sum)/(scalar @ntypes));
     my @tmp_types = @ntypes;
     @ntypes = ();
@@ -233,10 +233,10 @@ sub load_ship {
     for $t (@base_types) {
       $carry_sum += $carry{$t};
     }
-#    printf "F: %6d; O: %6d; W: %6d; E: %6d = T: %6d Need: %d\n",
-#           $carry{food}, $carry{ore},
-#           $carry{water}, $carry{energy},
-#           $carry_sum, scalar @ntypes;
+    printf "F: %6d; O: %6d; W: %6d; E: %6d = T: %6d Need: %d\n",
+           $carry{food}, $carry{ore},
+           $carry{water}, $carry{energy},
+           $carry_sum, scalar @ntypes;
   }
 
   my $send = {};
