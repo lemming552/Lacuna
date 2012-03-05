@@ -15,7 +15,10 @@ use JSON;
     \%opts,
     'data=s',
     'config=s',
+    'help',
   );
+
+  usage() if $opts{help};
 
   unless ( $opts{config} and -e $opts{config} ) {
     $opts{config} = eval{
@@ -77,7 +80,7 @@ exit;
 
 sub usage {
   die <<"END_USAGE";
-Usage: $0 myempire.yml  Some Empire Name
+Usage: $0 --config lacuna.yml --data log/empire_rank.js
 
 END_USAGE
 
