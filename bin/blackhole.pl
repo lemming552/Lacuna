@@ -15,7 +15,7 @@ use utf8;
     h          => 0,
     v          => 0,
     config     => "lacuna.yml",
-    datafile   => "data/data_blackhole.js",
+    datafile   => "log/blackhole.js",
     maxdist    => 300,
   );
 
@@ -34,6 +34,7 @@ use utf8;
     'change_type=i',
     'swap_places',
     'view',
+    'get_odds',
   );
 
   unless ( $opts{config} and -e $opts{config} ) {
@@ -144,6 +145,9 @@ use utf8;
   if ($opts{view}) {
     $bhg_out = $bhg->view();
   }
+  elsif ($opts{get_odds}) {
+    $bhg_out = $bhg->get_actions_for($target);
+  }
   elsif ($opts{make_planet}) {
     $bhg_out = $bhg->generate_singularity($target, "Make Planet");
   }
@@ -166,7 +170,7 @@ use utf8;
   print $ofh $json->pretty->canonical->encode($bhg_out);
   close($ofh);
 
-  if ($opts{view}) {
+  if ($opts{view} or $opts{get_odds}) {
     print $json->pretty->canonical->encode($bhg_out->{tasks});
   }
   else {
