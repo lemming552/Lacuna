@@ -39,6 +39,7 @@ use Exception::Class;
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $opts{'config'} || "lacuna.yml",
     prompt_captcha => 1,
+    rpc_sleep => 1,
     # debug    => 1,
   );
 
