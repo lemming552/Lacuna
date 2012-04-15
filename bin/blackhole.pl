@@ -34,7 +34,7 @@ use utf8;
     'change_type=i',
     'swap_places',
     'view',
-    'get_odds',
+    'actions',
   );
 
   unless ( $opts{config} and -e $opts{config} ) {
@@ -145,7 +145,7 @@ use utf8;
   if ($opts{view}) {
     $bhg_out = $bhg->view();
   }
-  elsif ($opts{get_odds}) {
+  elsif ($opts{actions}) {
     $bhg_out = $bhg->get_actions_for($target);
   }
   elsif ($opts{make_planet}) {
@@ -170,7 +170,7 @@ use utf8;
   print $ofh $json->pretty->canonical->encode($bhg_out);
   close($ofh);
 
-  if ($opts{view} or $opts{get_odds}) {
+  if ($opts{view} or $opts{actions}) {
     print $json->pretty->canonical->encode($bhg_out->{tasks});
   }
   else {
@@ -224,6 +224,7 @@ Usage: $0 CONFIG_FILE
        --change_type    Change type of habitable planet
        --swap_places    Swap planet with targetted body
        --view           View options
+       --actions        View statistics for possible actions with designated target
 
 END_USAGE
 

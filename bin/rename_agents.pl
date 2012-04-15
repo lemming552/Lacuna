@@ -18,8 +18,10 @@ use Exception::Class;
         counter  => 0,
         all      => 0,
         dryrun   => 0,
-        dumpfile => "data/data_agents.js",
+        dumpfile => "log/data_agents.js",
         names    => 'data/agents.js',
+        sleep    => 1,
+        rand     => 1,
   );
 
   GetOptions(\%opts,
@@ -32,6 +34,8 @@ use Exception::Class;
     'all',
     'dryrun',
     'dumpfile=s',
+    'sleep',
+    'rand',
   );
 
   usage() if $opts{'h'};
@@ -39,15 +43,15 @@ use Exception::Class;
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $opts{'config'} || "lacuna.yml",
     prompt_captcha => 1,
-    rpc_sleep => 1,
+    rpc_sleep => $opts{sleep},
     # debug    => 1,
   );
 
   my $json = JSON->new->utf8(1);
 
-  my $anames = get_json($opts{names});
-  unless ($anames) {
-    $anames = {};
+  my $anames = {};
+  if (-e "$opts{names}") {
+    $anames = get_json($opts{names});
   }
 
   open(OUTPUT, ">", $opts{'dumpfile'}) || die "Could not open $opts{'dumpfile'}";
@@ -76,7 +80,11 @@ use Exception::Class;
 
     unless (defined($anames->{$pname})) {
       $anames->{$pname}->{init} = '';
-      $anames->{$pname}->{name} = ();
+      $anames->{$pname}->{name} = [];
+    }
+    else {
+      $anames->{$pname}->{init} = '' unless (defined( $anames->{$pname}->{init}));
+      $anames->{$pname}->{name} = [] unless (defined( $anames->{$pname}->{name}));
     }
 
     my @b = grep { $buildings->{$_}->{url} eq '/intelligence' } keys %$buildings;
@@ -115,25 +123,32 @@ use Exception::Class;
       }
       print scalar @spies, " found from $pname.\n";
       print OUTPUT $json->pretty->canonical->encode(\@spies);
-      unless ($opts{all}) {
-        for my $spy_r (@spies) {
-          @{$anames->{$pname}->{name}} =
-            grep { $_ ne $spy_r->{name} } @{$anames->{$pname}->{name}};
+      if (scalar @{$anames->{$pname}->{name}} > 0) {
+        unless ($opts{all}) {
+          for my $spy_r (@spies) {
+            @{$anames->{$pname}->{name}} =
+              grep { $_ ne $spy_r->{name} } @{$anames->{$pname}->{name}};
+          }
         }
-      }
-      else {
-        @{$anames->{$pname}->{name}} = sort { $a cmp $b } @{$anames->{$pname}->{name}};
+        else {
+          @{$anames->{$pname}->{name}} = sort { $a cmp $b } @{$anames->{$pname}->{name}};
+        }
       }
       for my $spy_r ( sort { $a->{id} <=> $b->{id} } @spies ) {
         my $sleep_flg = 0;
         my $spy_id = $spy_r->{'id'};
         my $spy_name = $spy_r->{'name'};
-        my $new_name = $spy_name;
-        if ($opts{all} or $spy_name =~ /agent/i or
-            lc(substr($spy_name,0,1)) ne lc($anames->{$pname}->{init})) {
-          my $pos = $opts{all} ? 1 : rand(@{$anames->{$pname}->{name}});
-          $new_name = (@{$anames->{$pname}->{name}}) ?
-             splice(@{$anames->{$pname}->{name}}, $pos , 1) : "";
+        my $new_name = "";
+        my $get_new = 0;
+        $get_new = 1 if ($opts{all} or $spy_name =~ /^agent/i);
+        $get_new = 1 if ( substr($spy_name,0,2) eq "zz");
+        $get_new = 1 if ( lc(substr($spy_name,0,1)) ne lc($anames->{$pname}->{init}));
+        if ($get_new) {
+          if (scalar @{$anames->{$pname}->{name}}) {
+            my $pos = $opts{rand} ? rand(@{$anames->{$pname}->{name}}) : 1;
+            $new_name = (@{$anames->{$pname}->{name}}) ?
+               splice(@{$anames->{$pname}->{name}}, $pos , 1) : "";
+          }
           if (!$new_name or length($new_name) < 3) {
             $new_name = "zz".$anames->{$pname}->{init}.sprintf("%06d",$spy_id);
           }
@@ -159,6 +174,9 @@ use Exception::Class;
               }
             } until ($ok);
           }
+          else {
+            $get_new = 0;
+          }
         }
         my $task = $spy_r->{'assignment'};
         my $cplanet = $spy_r->{assigned_to}{name};
@@ -169,7 +187,7 @@ use Exception::Class;
           $task = "Counter ".$result->{'mission'}->{'result'};
           $sleep_flg = 1;
         }
-        if ($spy_name ne $new_name) {
+        if ($get_new) {
           print "$spy_name is now $new_name - $loffdef - $task on $cplanet.\n";
         }
         elsif ($result) {
@@ -216,9 +234,12 @@ Options:
   --verbose          - Print out more information such as affinities.
   --config <file>    - Specify a GLC config file, normally lacuna.yml.
   --planet <name>    - Specify planet with genelab.
-  --dryrun           - Just print out what would be done.
   --dumpfile         - data dump for all the info we don not print, default data/data_agent.yml
   --names            - Name file, default data/agents.yml
+  --counter          - Set agent on counter.
+  --all              - Rename all agents. Names might not change.
+  --sleep            - Sleep interval.
+  --rand             - Choose names from list in random order instead of ID order.
 END
   exit 1;
 }

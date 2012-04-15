@@ -115,6 +115,7 @@ use utf8;
       die "$opts{from} : $from_id or $opts{to} : $to_id invalid\n";
     }
   }
+  undef $pdata; #Dump from memory
 # Determine if we are sending or fetching
   my $spy_planet_id;
   my $spy_planet_name;
