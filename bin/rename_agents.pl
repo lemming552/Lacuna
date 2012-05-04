@@ -196,7 +196,7 @@ use Exception::Class;
         else {
           print "$spy_name  $loffdef continues $task on $cplanet.\n";
         }
-        sleep 1 if $sleep_flg;
+        sleep $opts{sleep} if $sleep_flg;
       }
     }
   }
@@ -227,15 +227,15 @@ Usage: $0 [options]
 
 This program will rename your agents.
 Steps to run:
-You will need a yml file with the agent names you want for each planet.
+You will need a json file with the agent names you want for each planet.
 
 Options:
   --help             - This info.
   --verbose          - Print out more information such as affinities.
-  --config <file>    - Specify a GLC config file, normally lacuna.yml.
+  --config <file>    - Specify a GLC config file, normally lacuna.yml
   --planet <name>    - Specify planet with genelab.
-  --dumpfile         - data dump for all the info we don not print, default data/data_agent.yml
-  --names            - Name file, default data/agents.yml
+  --dumpfile         - data dump for all the info we don not print, default data/data_agent.js
+  --names            - Name file, default data/agents.js
   --counter          - Set agent on counter.
   --all              - Rename all agents. Names might not change.
   --sleep            - Sleep interval.
