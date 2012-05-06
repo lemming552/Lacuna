@@ -396,6 +396,8 @@ sub ship_types {
         galleon
         gas_giant_settlement_ship
         hulk
+        hulk_fast
+        hulk_huge
         mining_platform_ship
         observatory_seeker
         placebo
@@ -407,6 +409,9 @@ sub ship_types {
         probe
         scanner
         scow
+        scow_fast
+        scow_large
+        scow_mega
         security_ministry_seeker
         short_range_colony_ship
         smuggler_ship
@@ -423,6 +428,7 @@ sub ship_types {
         surveyor
         sweeper
         terraforming_platform_ship
+        thud
       ),
     );
   return @shiptypes;
