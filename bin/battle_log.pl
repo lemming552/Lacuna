@@ -23,6 +23,7 @@ use utf8;
   my %opts = (
     h            => 0,
     v            => 0,
+    pages        => 0,
     config       => "lacuna.yml",
     dumpfile     => $log_dir . '/battle_log_'.
                       time2str('%Y%m%dT%H%M%S%z', time).
@@ -34,11 +35,12 @@ use utf8;
     'dumpfile=s',
     'h|help',
     'v|verbose',
+    'pages=i',
   );
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $opts{config},
-    rpc_sleep => 2,
+    rpc_sleep => 1,
 #    prompt_captcha => 1,
     # debug    => 1,
   );
@@ -80,6 +82,8 @@ use utf8;
     }
     push @logs, @{$logs->{battle_log}};
     $done = 25 * $page >= $logs->{number_of_logs};
+    
+    $done = 1 if ($opts{pages} and $page > $opts{pages});
   }
   print "\n";
 

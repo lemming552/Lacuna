@@ -13,20 +13,17 @@ use utf8;
   my $planet_name;
   my $cfg_file = "lacuna.yml";
   my $skip = 1;
+  my $nodump = 0;
 
   my @skip_planets = (
-    "Arson",
-    "Daedalus",
-    "Regulus Lex",
-    "Z Station 01",
-    "Z Station 02",
-    "Z Station 03",
   );
 
   GetOptions(
     'planet=s'    => \$planet_name,
     'config=s'    => \$cfg_file,
-    'skip!'     => \$skip,
+    'skip!'       => \$skip,
+    'dumpfile=s'  => \$dumpfile,
+    'nodump'      => \$nodump,
   );
 
   unless ( $cfg_file and -e $cfg_file ) {
@@ -49,8 +46,10 @@ use utf8;
     # debug    => 1,
   );
 
-  my $pf;
-  open($pf, ">", "data/data_plan_rpt.js") or die;
+  unless ($nodump) {
+    my $pf;
+    open($pf, ">", "$dumpfile") or die "Could not open $dumpfile for writing\n";
+  }
 
   my $json = JSON->new->utf8(1);
 
@@ -104,42 +103,41 @@ use utf8;
     
     $max_length = max map { length $_->{name} } @$plans;
     
-    my %plan_out;
-    for my $plan ( @$plans ) {
-      my $key = sprintf "%${max_length}s, level %2d",
-                        $plan->{name},
-                        $plan->{level};
-        
+    my $total_plans = 0;
+    for my $plan ( sort srtname @$plans ) {
+      my $ebl = "  "; my $pls = " ";
       if ( $plan->{extra_build_level} ) {
-        $key .= sprintf " + %2d", $plan->{extra_build_level};
+        $ebl = $plan->{extra_build_level};
+        $pls = "+";
       }
-      else {
-        $key .= "     ";
-      }
-      if (defined($plan_out{$key})) {
-        $plan_out{$key}++;
-      }
-      else {
-        $plan_out{$key} = 1;
-      }
-    }
-    for my $key (sort srtname keys %plan_out) {
-      print "$key  ($plan_out{$key})\n";
+      printf "%${max_length}s, level %2s %s %2s (%5d)\n",
+                        $plan->{name},
+                        $plan->{level},
+                        $pls, $ebl,
+                        $plan->{quantity};
+        
+      $total_plans += $plan->{quantity};
     }
     print "\n";
-    print "Total Plans: ", scalar @$plans, "\n\n";
-    $all_plans += scalar @$plans;
+    print "Total Plans: ", $total_plans, "\n\n";
+    $all_plans += $total_plans;
     sleep 2;
   }
   print "We have $all_plans plans.\n";
-  print $pf $json->pretty->canonical->encode(\%plan_hash);
-  close $pf;
+  unless ($nodump) {
+    print $pf $json->pretty->canonical->encode(\%plan_hash);
+    close $pf;
+  }
 exit;
 
 sub srtname {
-  my $abit = $a;
-  my $bbit = $b;
+  my $abit = $a->{name};
+  my $bbit = $b->{name};
   $abit =~ s/ //g;
   $bbit =~ s/ //g;
-  $abit cmp $bbit;
+  my $aebl = ($a->{extra_build_level}) ? $a->{extra_build_level} : 0;
+  my $bebl = ($b->{extra_build_level}) ? $b->{extra_build_level} : 0;
+  $abit cmp $bbit ||
+  $a->{level} <=> $b->{level} ||
+  $aebl <=> $bebl;
 }
