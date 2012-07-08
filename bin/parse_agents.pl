@@ -11,10 +11,12 @@ use utf8;
 
 my $data_file = "log/spy_data.js";
 my $help = 0;
+my $offplanet = 0;
 
 GetOptions(
   'help' => \$help,
   'input=s' => \$data_file,
+  'offplanet' => \$offplanet,
 );
   if ($help) {
     print "parse_agents.pl --input input\n";
@@ -32,6 +34,7 @@ GetOptions(
   print "Agent Name,Planet,Loc,id,lvl,off,def,intel,mayhem,politic,",
         "theft,defm,offm,Assignment,Avail\n";
   for my $spy (@$file_data) {
+    next if ($offplanet and ($spy->{home} eq $spy->{assigned_to}->{name}));
     print join(",", $spy->{name}, $spy->{home}, $spy->{assigned_to}->{name}, $spy->{id},
                     $spy->{level}, $spy->{offense_rating}, $spy->{defense_rating},
                     $spy->{intel}, $spy->{mayhem}, $spy->{politics}, $spy->{theft},

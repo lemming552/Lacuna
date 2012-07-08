@@ -366,7 +366,7 @@ Options:
   --help               - Prints this out
   --config    cfg_file   - Config file, defaults to lacuna.yml
   --planet    planet     - Planet Names you are building at.
-  --yards     file       - File with shipyard level & ID default data/shipyards.yml
+  --yards     file       - File with shipyard level & ID default data/shipyards.js
   --type      shiptype   - ship type you want to build, partial name fine
   --number    number     - Number of ships you wish to produce at each shipyard
   --noreserve            - Ignore Reserve number in datafile

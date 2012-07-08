@@ -250,16 +250,20 @@ sub load_ship {
   my $food_total = total_of(\@foods, $supply);
   my $ore_total  = total_of(\@ores,  $supply);
 
-  for my $food (@foods) {
-    my $sfood = int($carry{food} * $supply->{$food}/$food_total);
-    if ($sfood > 100) {
-      $send->{$food} = $sfood;
+  if ($food_total) {
+    for my $food (@foods) {
+      my $sfood = int($carry{food} * $supply->{$food}/$food_total);
+      if ($sfood > 100) {
+        $send->{$food} = $sfood;
+      }
     }
   }
-  for my $ore (@ores) {
-    my $sore = int($carry{ore} * $supply->{$ore}/$ore_total);
-    if ($sore > 100) {
-      $send->{$ore} = $sore;
+  if ($ore_total) {
+    for my $ore (@ores) {
+      my $sore = int($carry{ore} * $supply->{$ore}/$ore_total);
+      if ($sore > 100) {
+        $send->{$ore} = $sore;
+      }
     }
   }
 

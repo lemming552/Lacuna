@@ -47,6 +47,7 @@ use utf8;
     'match_plan=s',
     'city',
     'decor',
+    'halls',
     'station',
     'standard',  # (Equiv of not city, station, glyph, or decor)
     'interest', # Highly subjective
@@ -275,7 +276,7 @@ sub grab_plans {
 
   my $plan;
   my %plans;
-  if ( $opts{city} or $opts{decor} or $opts{glyph} or
+  if ( $opts{city} or $opts{decor} or $opts{halls} or $opts{glyph} or
        $opts{station} or $opts{interest} or $opts{crap} or
        $opts{standard}) {
     if ($opts{city}) {
@@ -286,6 +287,12 @@ sub grab_plans {
     }
     if ($opts{decor}) {
       my $slice = yoink($plans, $plan_types, "decor" );
+      for my $sl (@$slice) {
+        $plans{$sl->{id}} = $sl;
+      }
+    }
+    if ($opts{halls}) {
+      my $slice = yoink($plans, $plan_types, "halls" );
       for my $sl (@$slice) {
         $plans{$sl->{id}} = $sl;
       }
@@ -312,6 +319,7 @@ sub grab_plans {
       my $slice = yoink($plans, $plan_types, "city" );
       push @$slice, @{ yoink($plans, $plan_types, "station" )};
       push @$slice, @{ yoink($plans, $plan_types, "glyph" )};
+      push @$slice, @{ yoink($plans, $plan_types, "halls" )};
       push @$slice, @{ yoink($plans, $plan_types, "any" )};
       push @$slice, @{ yoink($plans, $plan_types, "plus" )};
       push @$slice, @{ yoink($plans, $plan_types, "decor" )};
@@ -444,7 +452,6 @@ sub return_types {
     "Citadel of Knope",
     "Crashed Ship Site",
     "Gas Giant Settlement Platform",
-    "Halls of Vrbansk",
     "Interdimensional Rift",
     "Junk Henge Sculpture",
     "Kalavian Ruins",
@@ -463,6 +470,10 @@ sub return_types {
     "Interdimensional Rift",
     "Kalavian Ruins",
     "Pantheon of Hagness",
+  ];
+
+  $plan_types{halls} = [
+    "Halls of Vrbansk",
   ];
 
   $plan_types{glyph} = [

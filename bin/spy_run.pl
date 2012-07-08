@@ -25,9 +25,9 @@ use Date::Format;
   my $random_bit = int rand 9999;
   my $dumpfile = "log/spy_run_".time2str('%Y%m%dT%H%M%S%z', time).
                       "_$random_bit.js";
-  my $fail_break = 3;
+  my $fail_break = 0;
   my $fail = 0;
-  my $sleep = 2;
+  my $sleep = 1;
 
   GetOptions(
     'from=s'       => \$planet_name,

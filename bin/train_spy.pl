@@ -96,7 +96,15 @@ use Games::Lacuna::Client ();
 ##
   my (@spies, $page, $done);
   while(!$done) {
-    my $spies = $intel->view_spies(++$page);
+    my $spies;
+    my $ok = 0;
+    $page++;
+    while (!$ok) {
+      $ok = eval {
+        $spies = $intel->view_spies(++$page);
+      };
+      sleep 60 unless ($ok);
+    }
     my @trim_spies;
     for my $spy (@{$spies->{spies}}) {
 #      print "\nChecking $spy->{name}:";

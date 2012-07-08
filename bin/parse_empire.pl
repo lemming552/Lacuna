@@ -10,15 +10,17 @@ use utf8;
 binmode STDOUT, ":utf8";
 
 my $data_file = "log/empire_rank.js";
-my $help = 0;
+my $help   = 0;
 my $detail = 0;
 my $eburn  = 0;
+my $live   = 0;
 
 GetOptions(
-  'help' => \$help,
+  'help'    => \$help,
   'input=s' => \$data_file,
   'detail'  => \$detail,
   'eburn'   => \$eburn,
+  'live=i'   => \$live,
 );
   if ($help) {
     print "parse_empire.pl --input input\n";
@@ -31,13 +33,16 @@ GetOptions(
   my $file_data = $json->decode($lines);
   close(DATA);
 
+  if ($eburn) {
+    $live = 21;
+  }
   print "Name\tID\tAlliance\tAID\tDate Created";
   print "\tColonies\tLast Login\tAlive" if $detail;
   print "\n";
   for my $empire (sort { $a->{empire_id} <=> $b->{empire_id} } @$file_data) {
-    if ($eburn) {
+    if ($live) {
       next unless ($empire->{profile}->{last_login});
-      next if (burning($empire->{profile}->{last_login}));
+      next if (alive($empire->{profile}->{last_login}, $live));
     }
     my $data = [
       defined($empire->{empire_name}) ? $empire->{empire_name} : "",
@@ -81,15 +86,15 @@ sub alive_time {
   return sprintf("%03d:%02d:%02d:%02d", sec2dhms($utime2->epoch - $utime1->epoch));
 }
 
-sub burning {
-  my ($time) = @_;
+sub alive {
+  my ($time, $live) = @_;
 
 # 26 11 2011 00:48:50 +0000
   $time =~ s/ \+0000$//;
   my $utime = Time::Piece->strptime($time, "%d %m %Y %T");
   my $gm = gmtime;
 
-  return 1 if ( ($gm->epoch - $utime->epoch) < (21*24*60*60));
+  return 1 if ( ($gm->epoch - $utime->epoch) < ($live*24*60*60));
   return 0;
 }
 

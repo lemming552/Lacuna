@@ -7,6 +7,7 @@ use lib "$FindBin::Bin/../lib";
 use List::Util            (qw(first max));
 use Getopt::Long          (qw(GetOptions));
 use Games::Lacuna::Client ();
+use Games::Lacuna::Client::Types qw( get_tags building_type_from_label meta_type );
 use JSON;
 use utf8;
 

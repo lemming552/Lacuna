@@ -6,6 +6,8 @@ use List::Util            (qw(first max));
 use JSON;
 use utf8;
 
+  binmode STDOUT, ":utf8";
+
   my $log_dir = "log";
 
   my %opts = (
@@ -59,7 +61,7 @@ sub get_json {
     open($fh, "$file") || die "Could not open $file\n";
     $lines = join("", <$fh>);
     return 0 unless ($lines);
-    my $data = $json->decode($lines);
+    my $data = $json->utf8->decode($lines);
     close($fh);
     return $data;
   }

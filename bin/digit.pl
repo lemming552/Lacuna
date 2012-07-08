@@ -130,7 +130,8 @@ sub parse_arch {
   for my $pname (sort keys %$json) {
     my $excavs = $json->{"$pname"}->{excavators};
     my $max_excavators = $json->{"$pname"}->{max_excavators};
-    printf "%20s: Has %2d of %2d sites.\n", $pname, scalar @$excavs, $max_excavators;
+    my $travel = $json->{"$pname"}->{travelling};
+    printf "%20s: Has %2d of %2d sites and %2d en route\n", $pname, (scalar @$excavs -1), $max_excavators, $travel;
     @$excavs = sort { $a->{id} <=> $b->{id} } @$excavs;
     my $excav = shift(@$excavs);
     @$excavs = sort {$a->{body}->{name} cmp $b->{body}->{name} } @$excavs;

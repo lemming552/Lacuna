@@ -14,11 +14,11 @@ use Exception::Class;
   my %opts = (
         h => 0,
         v => 0,
-        maxlevel => 30,
+        maxlevel => 29,  # I know 30 is max, but for planets with a lot of spaceports, too much energy
         config => "lacuna.yml",
         dumpfile => "log/space_builds.js",
         station => 0,
-        wait    => 8 * 60 * 60,
+        wait    => 14 * 60 * 60,
   );
 
   GetOptions(\%opts,
