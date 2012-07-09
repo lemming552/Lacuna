@@ -4,10 +4,10 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use List::Util            (qw(first));
+use List::Util qw(first);
 use Games::Lacuna::Client ();
-use Getopt::Long          (qw(GetOptions));
-use POSIX                 (qw(floor));
+use Getopt::Long qw(GetOptions);
+use POSIX qw(floor);
 my $cfg_file;
 
 if ( @ARGV && $ARGV[0] !~ /^--/ ) {
@@ -32,15 +32,15 @@ unless ( $cfg_file and -e $cfg_file ) {
 my $from;
 my $to;
 my $ship_name;
-my $match_glyph;
+my $match_plan;
 my $max;
 
 GetOptions(
-    'from=s'  => \$from,
-    'to=s'    => \$to,
-    'ship=s'  => \$ship_name,
-    'glyph=s' => \$match_glyph,
-    'max=i'   => \$max,
+    'from=s' => \$from,
+    'to=s'   => \$to,
+    'ship=s' => \$ship_name,
+    'plan=s' => \$match_plan,
+    'max=i'  => \$max,
 );
 
 usage() if !$from || !$to;
@@ -72,32 +72,38 @@ keys %$buildings;
 
 my $trade_min = $client->building( id => $trade_min_id, type => 'Trade' );
 
-my $glyphs_result = $trade_min->get_glyph_summary;
-my @glyphs        = @{ $glyphs_result->{glyphs} };
+my $plans_result = $trade_min->get_plan_summary;
+my @plans        = @{ $plans_result->{plans} };
 
-if ($match_glyph) {
-    @glyphs =
-      grep { $_->{name} =~ /$match_glyph/i } @glyphs;
+if ($match_plan) {
+    @plans =
+      grep { $_->{name} =~ /$match_plan/i } @plans;
 }
 
-if ( !@glyphs ) {
-    print "No glyphs available to push\n";
-    exit;
-}
-
+# if ( $max && @plans > $max ) {
+#     splice @plans, $max;
+# }
 if ($max) {
     my $total = 0;
-    for my $glyph ( sort { $a->{name} cmp $b->{name} } @glyphs ) {
+    for my $plan ( sort srtname @plans ) {
 
-        #    print "$glyph->{name} $glyph->{quantity}\n";
-        if ( ( $total + $glyph->{quantity} ) > $max ) {
-            $glyph->{quantity} = $max - $total;
+        #    print $plan->{quantity}, ": ",
+        #          $plan->{name}," ",
+        #          $plan->{level},"+",
+        #          $plan->{extra_build_level},"\n";
+        if ( ( $total + $plan->{quantity} ) > $max ) {
+            $plan->{quantity} = $max - $total;
             $total = $max;
         }
         else {
-            $total += $glyph->{quantity};
+            $total += $plan->{quantity};
         }
     }
+}
+
+if ( !@plans ) {
+    print "No plans available to push\n";
+    exit;
 }
 
 my $ship_id;
@@ -109,29 +115,28 @@ if ($ship_name) {
       grep { $_->{name} =~ /\Q$ship_name/i } @$ships;
 
     if ($ship) {
-        my $cargo_each = $glyphs_result->{cargo_space_used_each};
+        my $cargo_each = $plans_result->{cargo_space_used_each};
         my $cargo_req  = 0;
-        for my $glyph (@glyphs) {
-            $cargo_req += $glyph->{quantity} * $cargo_each;
+        for my $plan (@plans) {
+            $cargo_req += $plan->{quantity} * $cargo_each;
         }
 
         if ( $ship->{hold_size} < $cargo_req ) {
             my $count = floor( $ship->{hold_size} / $cargo_each );
             my $total = 0;
-            for my $glyph ( sort { $a->{name} cmp $b->{name} } @glyphs ) {
-                if ( ( $total + $glyph->{quantity} ) > $count ) {
-                    $glyph->{quantity} = $count - $total;
+            for my $plan ( sort srtname@plans ) {
+                if ( ( $total + $plan->{quantity} ) > $count ) {
+                    $plan->{quantity} = $count - $total;
                     $total = $count;
                 }
                 else {
-                    $total += $glyph->{quantity};
+                    $total += $plan->{quantity};
                 }
             }
             warn sprintf
-"Specified ship cannot hold all glyphs - only pushing %d glyphs\n",
+              "Specified ship cannot hold all plans - only pushing %d plans\n",
               $count;
         }
-
         $ship_id = $ship->{id};
     }
     else {
@@ -142,20 +147,22 @@ if ($ship_name) {
 
 my @items;
 my $shipping = 0;
-for my $glyph (@glyphs) {
+for my $plan (@plans) {
     push @items,
       {
-        type     => "glyph",
-        name     => $glyph->{name},
-        quantity => $glyph->{quantity},
+        type              => 'plan',
+        plan_type         => $plan->{plan_type},
+        level             => $plan->{level},
+        extra_build_level => $plan->{extra_build_level},
+        quantity          => $plan->{quantity},
       }
-      if ( $glyph->{quantity} > 0 );
+      if ( $plan->{quantity} > 0 );
 }
 
 #print "Items\n";
 for my $item (@items) {
 
-    #  print "$item->{type} $item->{name} $item->{quantity}\n";
+#  print "$item->{type} $item->{plan_type} $item->{level} $item->{extra_build_level} $item->{quantity}\n";
     $shipping += $item->{quantity};
 }
 
@@ -164,10 +171,22 @@ my $return =
     ? { ship_id => $ship_id }
     : () );
 
-printf "Pushed %d glyphs\n", $shipping;
-printf "Arriving %s\n",      $return->{ship}{date_arrives};
+printf "Pushed %d plans\n", $shipping;
+printf "Arriving %s\n",     $return->{ship}{date_arrives};
 
 exit;
+
+sub srtname {
+    my $abit = $a->{name};
+    my $bbit = $b->{name};
+    $abit =~ s/ //g;
+    $bbit =~ s/ //g;
+    my $aebl = ( $a->{extra_build_level} ) ? $a->{extra_build_level} : 0;
+    my $bebl = ( $b->{extra_build_level} ) ? $b->{extra_build_level} : 0;
+    $abit cmp $bbit
+      || $a->{level} <=> $b->{level}
+      || $aebl <=> $bebl;
+}
 
 sub usage {
     die <<END_USAGE;
@@ -175,12 +194,12 @@ Usage: $0 CONFIG_FILE
        --from      PLANET_NAME    (REQUIRED)
        --to        PLANET_NAME    (REQUIRED)
        --ship      SHIP NAME REGEX
-       --glyph     GLYPH NAME REGEX
-       --max       MAX No. GLYPHS TO PUSH
+       --plan      PLAN NAME REGEX
+       --max       MAX No. PLANS TO PUSH
 
 CONFIG_FILE  defaults to 'lacuna.yml'
 
-Pushes glyphs between your own planets.
+Pushes plans between your own planets.
 
 END_USAGE
 
