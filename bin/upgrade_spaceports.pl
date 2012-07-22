@@ -41,7 +41,7 @@ use Exception::Class;
   my $json = JSON->new->utf8(1);
   $json = $json->pretty([1]);
   $json = $json->canonical([1]);
-  open(OUTPUT, ">", $opts{dumpfile}) || die "Could not open $opts{dumpfile}";
+  open(OUTPUT, ">", $opts{dumpfile}) || die "Could not open $opts{dumpfile} for writing.";
 
   my $status;
   my $empire = $glc->empire->get_status->{empire};
