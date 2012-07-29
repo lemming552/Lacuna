@@ -98,7 +98,6 @@ use Games::Lacuna::Client ();
   while(!$done) {
     my $spies;
     my $ok = 0;
-    $page++;
     while (!$ok) {
       $ok = eval {
         $spies = $intel->view_spies(++$page);
