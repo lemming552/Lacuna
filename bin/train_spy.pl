@@ -16,7 +16,7 @@ use Games::Lacuna::Client ();
   my $max_off = 10000;
   my $max_def = 10000;
   my $number  = 10000;
-  my $sleep   = 0;
+  my $sleep   = 5;
 
   GetOptions(
     'planet=s'     => \$planet_name,
@@ -27,7 +27,6 @@ use Games::Lacuna::Client ();
     'min_def=i'    => \$min_def,
     'max_off=i'    => \$max_off,
     'max_def=i'    => \$max_def,
-    'number=i'     => \$number,
     'sleep=i'      => \$sleep,
   );
 
@@ -166,12 +165,15 @@ sub usage {
 Usage: $0 CONFIG_FILE
     --planet   PLANET
     --training TYPE
+    --number   Number of spies to train
+    --idle     Only train Idle spies and don't take spies off Counter Espionage
+    --min_off  Only train spies with Offense >= min_off
+    --min_def  Only train spies with Defense >= min_def
+    --max_off  Only train spies with Offense <= max_off
+    --max_def  Only train spies with Defense <= max_def
+    --sleep    Set rpc_sleep to sleep number to avoid hitting the rpc limit
 
 CONFIG_FILE  defaults to 'lacuna.yml'
-
---planet is the planet that your spy is from.
-
---training must match one of the following: intel, mayhem, theft, politics
 
 END_USAGE
 
