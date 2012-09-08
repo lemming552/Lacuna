@@ -84,7 +84,13 @@ use Exception::Class;
         };
         unless ($ok) {
           my $err = $@;
-          die $err,"\n";
+          if ($err =~ /Not enough resources to do a partial repair/) {
+            print "$err\n";
+            last;
+          }
+          else {
+            die $err,"\n";
+          }
         }
       }
       $status->{"$pname"} = $sarr;
