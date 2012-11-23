@@ -25,6 +25,9 @@ use utf8;
     'y=i',
     'id=i',
     'target=s',
+    'zone=s',
+    'star_name=s',
+    'star_id=i',
     'help|h',
     'datafile=s',
     'config=s',
@@ -33,6 +36,8 @@ use utf8;
     'increase_size',
     'change_type=i',
     'swap_places',
+    'move_system',
+    'jump_zone',
     'subsidize_cool',
     'succeed',
     'view',
@@ -73,7 +78,7 @@ use utf8;
         print "Changing to type $params->{newtype}\n";
       }
     }
-    usage() if !$opts{target} && !defined $opts{x} && !defined $opts{y} && !defined $opts{id};
+#    usage() if !$opts{target} && !defined $opts{x} && !defined $opts{y} && !defined $opts{id};
 
     usage() if defined $opts{x} && !defined $opts{y};
     usage() if defined $opts{y} && !defined $opts{x};
@@ -126,6 +131,18 @@ use utf8;
       $target      = { body_id => $opts{id} };
       $target_name = $opts{id};
     }
+    elsif ( defined $opts{zone} ) {
+      $target      = { zone => $opts{zone} };
+      $target_name = $opts{zone};
+    }
+    elsif ( defined $opts{star_name} ) {
+      $target      = { star_name => $opts{star_name} };
+      $target_name = $opts{star_name};
+    }
+    elsif ( defined $opts{star_id} ) {
+      $target      = { star_id => $opts{star_id} };
+      $target_name = $opts{star_id};
+    }
     else {
       die "target arguments missing\n";
     }
@@ -173,6 +190,12 @@ use utf8;
     }
     elsif ($opts{swap_places}) {
       $args->{task_name} = "Swap Places";
+    }
+    elsif ($opts{jump_zone}) {
+      $args->{task_name} = "Jump Zone";
+    }
+    elsif ($opts{move_system}) {
+      $args->{task_name} = "Move System";
     }
     else {
       die "Nothing to do!\n";

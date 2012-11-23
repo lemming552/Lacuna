@@ -32,6 +32,8 @@ use Date::Format;
     'h|help',
     'planet=s@',
     'v|verbose',
+    'all',
+#    'emp',
   );
 
   usage() if $opts{h};
@@ -83,19 +85,32 @@ use Date::Format;
       print "No Int Ministry on $pname\n";
       next;
     }
+    print "Checking $pname : ";
     my $intel = $glc->building( id => $intel_id, type => 'Intelligence' );
-
+ 
     my (@pl_spies, $page, $done);
 
-    while(!$done) {
-      my $spies = $intel->view_spies(++$page);
-      push @pl_spies, @{$spies->{spies}};
-      $done = 25 * $page >= $spies->{spy_count};
+    if ($opts{emp}) {
+      my $spies = $intel->view_empire_spies;
+      push @spies, @{$spies->{spies}};
+      print "No need to check remaining planets.\n";
+      last;
+    }
+    elsif ($opts{all}) {
+        my $spies = $intel->view_all_spies;
+        push @pl_spies, @{$spies->{spies}};
+    }
+    else {
+      while(!$done) {
+        my $spies = $intel->view_spies(++$page);
+        push @pl_spies, @{$spies->{spies}};
+        $done = 25 * $page >= $spies->{spy_count};
+      }
     }
     print scalar @pl_spies," spies found from $pname\n";
-    foreach my $spy (@pl_spies) {
-      $spy->{home} = $pname;
-    }
+#    foreach my $spy (@pl_spies) {
+#      $spy->{home} = $pname;
+#    }
     push @spies, @pl_spies;
   }
   print scalar @spies," total spies found.\n";
@@ -108,6 +123,10 @@ sub usage {
   die <<"END_USAGE";
 Usage: $0 CONFIG_FILE
     --planet     PLANET (can be called multiple times)
+    --config     CONFIG_FILE  (default lacuna.yml)
+    --dumpfile   DUMP_FILE (default log/spy_data.js)
+    --all        Uses view_all_spies API call which gets all spies from one Int Ministry
+    --help       This message
 
 CONFIG_FILE  defaults to 'lacuna.yml'
 
