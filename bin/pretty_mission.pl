@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Script to pretty up JSON missions
 # Also adds missing ship values, though eyes needed to validate them

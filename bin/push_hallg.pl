@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -239,26 +239,26 @@ END_USAGE
 
 sub get_num {
   my %glyph_num = (
-    "goethite"     => 12, #A
-    "gypsum"       => 12, #A
-    "halite"       => 12, #A
-    "trona"        => 12, #A
-    "anthracite"   => 17, #B
-    "bauxite"      => 17, #B
-    "gold"         => 17, #B
-    "uraninite"    => 17, #B
-    "kerogen"      => 21, #C
-    "methane"      => 21, #C
-    "sulfur"       => 21, #C
-    "zircon"       => 21, #C
-    "beryl"        => 23, #D
-    "fluorite"     => 23, #D
-    "magnetite"    => 23, #D
-    "monazite"     => 23, #D
-    "chalcopyrite" => 23, #E
-    "chromite"     => 23, #E
-    "galena"       => 23, #E
-    "rutile"       => 23, #E
+    "goethite"     => 445, #A
+    "gypsum"       => 418, #A
+    "halite"       => 555, #A
+    "trona"        => 347, #A
+    "anthracite"   => 380, #B
+    "bauxite"      => 379, #B
+    "gold"         => 445, #B
+    "uraninite"    => 403, #B
+    "kerogen"      => 322, #C
+    "methane"      => 388, #C
+    "sulfur"       => 420, #C
+    "zircon"       => 491, #C
+    "beryl"        => 554, #D
+    "fluorite"     => 555, #D
+    "magnetite"    => 439, #D
+    "monazite"     => 354, #D
+    "chalcopyrite" => 343, #E
+    "chromite"     => 461, #E
+    "galena"       => 483, #E
+    "rutile"       => 497, #E
     "unknown"      => 0, # For recipes we know exist, but don't know what goes in them
   );
   return \%glyph_num;

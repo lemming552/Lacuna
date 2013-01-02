@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Simple program for upgrading spaceports.
 
@@ -14,7 +14,7 @@ use Exception::Class;
   my %opts = (
         h => 0,
         v => 0,
-        maxlevel => 25,  # I know 30 is max, but for planets with a lot of spaceports, too much energy
+        maxlevel => 30, 
         config => "lacuna.yml",
         dumpfile => "log/space_builds.js",
         station => 0,

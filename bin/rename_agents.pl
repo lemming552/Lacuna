@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Rename agents to 
 
@@ -22,6 +22,8 @@ use Exception::Class;
         names    => 'data/agents.js',
         sleep    => 1,
         rand     => 1,
+        number   =>  0,
+        pages    =>  0,
   );
 
   GetOptions(\%opts,
@@ -36,6 +38,8 @@ use Exception::Class;
     'dumpfile=s',
     'sleep',
     'rand',
+    'number=i',
+    'pages=i',
   );
 
   usage() if $opts{'h'};
@@ -108,6 +112,7 @@ use Exception::Class;
           push @spies, @{$spies->{spies}};
           $done = 25 * $page >= $spies->{spy_count};
           $page++;
+          $done = 1 if ($opts{pages} and $opts{pages} < $page);
         }
         else {
           my $error = $@;
@@ -134,8 +139,9 @@ use Exception::Class;
           @{$anames->{$pname}->{name}} = sort { $a cmp $b } @{$anames->{$pname}->{name}};
         }
       }
+      my $spy_count = 0;
       for my $spy_r ( sort { $a->{id} <=> $b->{id} } @spies ) {
-        my $sleep_flg = 0;
+        my $call_done = 0;
         my $spy_id = $spy_r->{'id'};
         my $spy_name = $spy_r->{'name'};
         my $new_name = "";
@@ -157,7 +163,7 @@ use Exception::Class;
             do {
               $ok = eval {
                 $int_id->name_spy( $spy_id, $new_name);
-                $sleep_flg = 1;
+                $call_done = 1;
               };
               unless ($ok) {
                 my $error = $@;
@@ -185,7 +191,7 @@ use Exception::Class;
         if ($opts{counter} and $cplanet eq $pname and $task eq "Idle") {
           $result = $int_id->assign_spy($spy_id, "Counter Espionage");
           $task = "Counter ".$result->{'mission'}->{'result'};
-          $sleep_flg = 1;
+          $call_done = 1;
         }
         if ($get_new) {
           print "$spy_name is now $new_name - $loffdef - $task on $cplanet.\n";
@@ -196,7 +202,11 @@ use Exception::Class;
         else {
           print "$spy_name  $loffdef continues $task on $cplanet.\n";
         }
-        sleep $opts{sleep} if $sleep_flg;
+        if ($call_done) {
+          sleep $opts{sleep};
+          $spy_count++;
+        }
+        last if ($opts{number} and $opts{number} < $spy_count);
       }
     }
   }

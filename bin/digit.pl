@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 use strict;
 use warnings;
@@ -138,8 +138,11 @@ sub parse_arch {
     unshift (@$excavs, $excav);
 
     for $excav ( @$excavs ) {
-      printf "%20s: A: %2d, G: %2d, P: %2d, R: %2d, id: %5d\n",
+      my $type = $excav->{body}->{image};
+      $type =~ s/-[1-8]$//;
+      printf "%20s: %-3s A: %2d, G: %2d, P: %2d, R: %2d, id: %5d\n",
         $excav->{body}->{name},
+        $type,
         $excav->{artifact},
         $excav->{glyph},
         $excav->{plan},

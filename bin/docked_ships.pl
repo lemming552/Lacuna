@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -22,6 +22,8 @@ GetOptions(
     @specs,
     'travelling',
     'mining',
+    'supply',
+    'waste',
     'all',
 );
 
@@ -56,7 +58,8 @@ my %planets = map { $empire->{planets}{$_}, $_ } keys %{ $empire->{planets} };
 my $total_str     = 'Total Docks';
 my $mining_str    = 'Ships Mining';
 my $defend_str    = 'Ships on remote Defense';
-my $excavator_str = 'Ships Excavating';
+my $supply_str    = 'Ships on Supply Chains';
+my $waste_str     = 'Ships on Waste Chains';
 my $available_str = 'Docks Available';
 my @all_ships;
 my $ship_hash = {};
@@ -86,7 +89,8 @@ foreach my $name ( sort keys %planets ) {
     
     my $mining_count    = 0;
     my $defend_count    = 0;
-    my $excavator_count = 0;
+    my $supply_count    = 0;
+    my $waste_count     = 0;
     my $filter;
     
     push @{ $filter->{task} }, 'Mining'
@@ -104,6 +108,15 @@ foreach my $name ( sort keys %planets ) {
 
     $ship_hash->{$name} = $ships;
 
+    $supply_count +=
+        grep {
+            $_->{task} eq 'Supply Chain'
+        } @$ships;
+    
+    $waste_count +=
+        grep {
+            $_->{task} eq 'Waste Chain'
+        } @$ships;
     
     $mining_count +=
         grep {
@@ -113,12 +126,6 @@ foreach my $name ( sort keys %planets ) {
     $defend_count +=
         grep {
             $_->{task} eq 'Defend'
-        } @$ships;
-    
-    $excavator_count +=
-        grep {
-               $_->{task} eq 'Travelling'
-            && $_->{type} eq 'excavator'
         } @$ships;
     
     @$ships =
@@ -140,16 +147,22 @@ foreach my $name ( sort keys %planets ) {
         $mining_str,
         $mining_count;
     
+    if ( $supply_count ) {
+        printf "%${max_length}s: %d\n",
+            $supply_str,
+            $supply_count
+    }
+
+    if ( $waste_count ) {
+        printf "%${max_length}s: %d\n",
+            $waste_str,
+            $waste_count
+    }
+
     if ( $defend_count ) {
         printf "%${max_length}s: %d\n",
             $defend_str,
             $defend_count
-    }
-    
-    if ( $excavator_count ) {
-        printf "%${max_length}s: %d\n",
-            $excavator_str,
-            $excavator_count
     }
     
     printf "%${max_length}s: %d\n",

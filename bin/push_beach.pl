@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -102,12 +102,12 @@ my $cfg_file;
         } @plans;
 
   print scalar @plans, " Beach plans to check for $levels\n";
-  unless ($levels == 0) {
+#  unless ($levels == 0) {
     @plans =
         grep {
-            $_->{extra_build_level} == $levels
+            $_->{extra_build_level} < 4;
         } @plans;
-  }
+#  }
   print scalar @plans, " Beach plans to send\n";
 
   if ( $pmax && @plans > $pmax ) {

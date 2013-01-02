@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Usage: perl parse_agents.pl probe_file
 #  
@@ -34,8 +34,10 @@ GetOptions(
   print "Agent Name,Planet,Loc,id,lvl,off,def,intel,mayhem,politic,",
         "theft,defm,offm,Assignment,Avail\n";
   for my $spy (@$file_data) {
-    next if ($offplanet and ($spy->{home} eq $spy->{assigned_to}->{name}));
-    print join(",", $spy->{name}, $spy->{home}, $spy->{assigned_to}->{name}, $spy->{id},
+#    next if ($offplanet and ($spy->{home} eq $spy->{assigned_to}->{name}));
+#    print join(",", $spy->{name}, $spy->{home}, $spy->{assigned_to}->{name}, $spy->{id},
+    next if ($offplanet and ($spy->{based_from}->{name} eq $spy->{assigned_to}->{name}));
+    print join(",", $spy->{name}, $spy->{based_from}->{name}, $spy->{assigned_to}->{name}, $spy->{id},
                     $spy->{level}, $spy->{offense_rating}, $spy->{defense_rating},
                     $spy->{intel}, $spy->{mayhem}, $spy->{politics}, $spy->{theft},
                     $spy->{mission_count}->{defensive}, $spy->{mission_count}->{offensive},

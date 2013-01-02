@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # RPC, Captcha awareness added.
 # Minimum and Maximum spy ratings added as well so you don't risk low rated spies first.
 #
@@ -16,6 +16,7 @@ use Date::Format;
 
   my $planet_name;
   my $target;
+  my $tid;
   my $task;
   my $min_off = 0;
   my $min_def = 0;
@@ -28,12 +29,15 @@ use Date::Format;
   my $fail_break = 0;
   my $fail = 0;
   my $sleep = 1;
+  my $cfg_file = "lacuna.yml";
 
   GetOptions(
     'from=s'       => \$planet_name,
     'fail_break=i' => \$fail_break,
+    'config=s'     => \$cfg_file,
     'dumpfile=s'   => \$dumpfile,
     'target=s'     => \$target,
+    'tid=i'        => \$tid,
     'task=s'       => \$task,
     'min_off=i'    => \$min_off,
     'min_def=i'    => \$min_def,
@@ -43,7 +47,18 @@ use Date::Format;
     'sleep=i'      => \$sleep,
   );
 
-  usage() if !$planet_name || !$target || !$task;
+  usage() if !$planet_name || (!$target and !$tid) || !$task;
+
+  my $tstr;
+  my $tvar;
+  if (defined($tid)) {
+    $tvar = $tid;
+    $tstr = "body_id";
+  }
+  else {
+    $tvar = $target;
+    $tstr = "name";
+  }
 
   my $task_list = task_list();
   unless (grep { $_ =~ /^$task/i } @{$task_list}) {
@@ -52,7 +67,6 @@ use Date::Format;
     die "You must pick a valid task\n";
   }
 
-  my $cfg_file = shift(@ARGV) || 'lacuna.yml';
   unless ( $cfg_file and -e $cfg_file ) {
     $cfg_file = eval{
       require File::HomeDir;
@@ -60,7 +74,7 @@ use Date::Format;
       my $dist = File::HomeDir->my_dist_config('Games-Lacuna-Client');
       File::Spec->catfile(
         $dist,
-        'login.yml'
+        'lacuna.yml'
       ) if $dist;
     };
     unless ( $cfg_file and -e $cfg_file ) {
@@ -106,7 +120,7 @@ use Date::Format;
     my $spies = $intel->view_spies(++$page);
     my @trim_spies;
     for my $spy (@{$spies->{spies}}) {
-      next if lc( $spy->{assigned_to}{name} ) ne lc( $target );
+      next if lc( $spy->{assigned_to}{$tstr} ) ne lc( $tvar );
       next unless ($spy->{is_available});
       next unless ($spy->{offense_rating} >= $min_off and
                    $spy->{offense_rating} <= $max_off and
@@ -127,12 +141,12 @@ use Date::Format;
       push @trim_spies, $spy;
     }
     push @spies, @trim_spies;
-    $done = (25 * $page >= $spies->{spy_count} or @spies > $number);
+    $done = (30 * $page >= $spies->{spy_count} or @spies > $number);
   }
 
   print scalar @spies," spies found from $planet_name available.";
   if (@spies >= $number) {
-    print " Only scanned thru first ",$page * 25, " spies.\n";
+    print " Only scanned thru first ",$page * 30, " spies.\n";
   }
   else {
     print "\n";
@@ -195,21 +209,26 @@ sub task_list {
 
 sub usage {
   die <<"END_USAGE";
-Usage: $0 CONFIG_FILE
+Usage: $0
+    --config     FILE  default: lacuna.yml
     --from       PLANET
     --target     PLANET
+    --tid        BODY_ID (Use either tid or target, not both)
     --task       MISSION
     --min_def    Minimum Defense Rating
     --min_off    Minimum Offense Rating
     --max_def    Maximum Defense Rating
     --max_off    Maximum Offense Rating
-    --number     Number of Agents to use
+    --number     Max Number of Agents to use
+    --fail_break Number of fails before giving up
+    --dumpfile   FILE json dumpfile
 
 CONFIG_FILE  defaults to 'lacuna.yml'
 
 --from is the planet that your spy is from.
 
 --target is the planet that your spy is assigned to.
+--tid    is the planet body id that your spy is assigned to. Usefull if target is a bunch of UTF8 chars.
 
 --task must match one of the missions listed in the API docs:
     http://us1.lacunaexpanse.com/api/Intelligence.html

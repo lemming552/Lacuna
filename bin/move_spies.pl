@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Script for sending and fetching spies.
 # Will use spaceport method as default which is cheaper RPC wise, but
@@ -37,6 +37,14 @@ use utf8;
     min_off  => 0,
     max_def  => 10000,
     max_off  => 10000,
+    min_intel  => 0,
+    max_intel  => 10000,
+    min_mayhem  => 0,
+    max_mayhem  => 10000,
+    min_politics  => 0,
+    max_politics  => 10000,
+    min_theft  => 0,
+    max_theft  => 10000,
   );
 
   GetOptions(\%opts,
@@ -57,6 +65,14 @@ use utf8;
     'min_off=i',
     'max_def=i',
     'max_off=i',
+    'min_intel=i',
+    'max_intel=i',
+    'min_mayhem=i',
+    'max_mayhem=i',
+    'min_politics=i',
+    'max_politics=i',
+    'min_theft=i',
+    'max_theft=i',
     'v|verbose',
   );
   
@@ -190,7 +206,16 @@ use utf8;
                 grep { $_->{offense_rating} >= $opts{min_off} and
                        $_->{offense_rating} <= $opts{max_off} and
                        $_->{defense_rating} >= $opts{min_def} and
-                       $_->{defense_rating} <= $opts{max_def} } @spies;
+                       $_->{defense_rating} <= $opts{max_def} and
+                       $_->{intel} >= $opts{min_intel} and
+                       $_->{intel} <= $opts{max_intel} and
+                       $_->{mayhem} >= $opts{min_mayhem} and
+                       $_->{mayhem} <= $opts{max_mayhem} and
+                       $_->{politics} >= $opts{min_politics} and
+                       $_->{politics} <= $opts{max_politics} and
+                       $_->{theft} >= $opts{min_theft} and
+                       $_->{theft} <= $opts{max_theft}
+                     } @spies;
 
   @spy_ids = sort { $a <=> $b } @spy_ids;
 

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -162,7 +162,7 @@ for my $plan (@plans) {
 #print "Items\n";
 for my $item (@items) {
 
-#  print "$item->{type} $item->{plan_type} $item->{level} $item->{extra_build_level} $item->{quantity}\n";
+  print "$item->{type} $item->{plan_type} $item->{level} $item->{extra_build_level} $item->{quantity}\n";
     $shipping += $item->{quantity};
 }
 

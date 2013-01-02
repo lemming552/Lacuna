@@ -1,10 +1,11 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
 use Getopt::Long          qw(GetOptions);
 use List::Util            qw( first );
 use FindBin;
+use JSON;
 use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client ();
 
@@ -66,6 +67,7 @@ use Games::Lacuna::Client ();
         rpc_sleep => $sleep,
 	# debug    => 1,
   );
+  my $json = JSON->new->utf8(1);
 
 # Load the planets
   my $empire  = $glc->empire->get_status->{empire};
@@ -112,6 +114,7 @@ use Games::Lacuna::Client ();
       next unless ($spy->{is_available});
 #      print ":",$spy->{assignment};
       next if ($idle and $spy->{assignment} ne 'Idle');
+      next unless ($spy->{$task} < 2600);
 
       next unless ($spy->{offense_rating} >= $min_off and
                    $spy->{offense_rating} <= $max_off and
@@ -153,6 +156,7 @@ SPY:
       warn "Error: $@\n";
       next;
     }
+#    print $json->pretty->canonical->encode($return);
 
     print( $return->{trained} ? "$spy->{id} Spy trained in $task\n" : "$spy->{id} Spy not trained in $task\n" );
   }

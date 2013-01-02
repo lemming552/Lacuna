@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Hacked from Steffen's code and then some of cxreg's stuffed in
 use strict;
 use warnings;

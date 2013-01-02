@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Stupid script for converting yaml files to json
 use strict;
 use warnings;

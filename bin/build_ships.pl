@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use strict;
 use warnings;
 use FindBin;
@@ -67,8 +67,6 @@ else {
     exit;
 }
 
-my $rpc_cnt;
-my $rpc_lmt;
 my $beg_dt = DateTime->now;
 my $end_dt = DateTime->now;
 if ($time) {
@@ -293,6 +291,8 @@ sub setup_yhash {
 
     my $planet;
     my $yhash;
+    my $rpc_cnt;
+    my $rpc_lmt;
     for $planet ( sort @$planets ) {
         $yhash->{"$planet"}->{keels}   = 0;
         $yhash->{"$planet"}->{reserve} = 0;
@@ -446,6 +446,7 @@ sub ship_types {
           drone
           excavator
           fighter
+          fissure_sealer
           freighter
           galleon
           gas_giant_settlement_ship

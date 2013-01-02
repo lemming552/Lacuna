@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Usage: perl parse_profile.pl probe_file
 #  
