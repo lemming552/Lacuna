@@ -17,6 +17,7 @@ use JSON;
   my $max_x = 1500; # Right now, it's plus or minus
   my $max_y = 1500;
   my @launchers;
+  my @tids;
   my @target_names;
   my $ship_name = "Tri"; # Any ship with the name "^Tri" case insensitive will be used.
   my $cfg_file = "lacuna.yml";
@@ -27,6 +28,7 @@ use JSON;
     'ship=s'    => \$ship_name,
     'config=s'  => \$cfg_file,
     'target=s@' => \@target_names,
+    'tid=i@'    => \@tids,
     'tfile=s'   => \$tfile,
     'csvfile=s' => \$csvfile,
     'outfile=s' => \$outfile,
@@ -72,22 +74,33 @@ use JSON;
     die;
   }
 
-#  my $fh;
-#  open($fh, ">", "data/data_triangulate.yml") || die "Could not open data/data_triangulate.yml";
-
   my @targets;
-  if (@target_names) {
+  if (@target_names or @tids) {
     for my $tname (@target_names) {
       my $target = {
         empire => '',
-        planet => $tname,
+        pname  => $tname,
+        tid    => '',
         x      => '',
         y      => '',
-        dist   => '',
-        star   => '',
         zone   => '',
         oldn   => '',
         ships  => [],
+        search => { body_name => "$tname" },
+      };
+      push @targets, $target;
+    }
+    for my $tid (@tids) {
+      my $target = {
+        empire => '',
+        pname  => '',
+        tid    => $tid,
+        x      => '',
+        y      => '',
+        zone   => '',
+        oldn   => '',
+        ships  => [],
+        search => { body_id => $tid },
       };
       push @targets, $target;
     }
@@ -128,11 +141,16 @@ use JSON;
     for my $thash (@targets) {
 # Probably want to have the ability to redo coords (if searching for a planet)
       next if ($thash->{x} && $thash->{y});
-      print "Targetting $thash->{planet} from $name\n";
+      if ($thash->{pname}) {
+        print "Targetting $thash->{pname} from $name\n";
+      }
+      else {
+        print "Targetting $thash->{tid} from $name\n";
+      }
       my $ships;
       my $ok;
       $ok = eval {
-           $ships = $space_port->get_ships_for( $planet_id, { body_name => "$thash->{planet}" }  );
+           $ships = $space_port->get_ships_for( $planet_id, $thash->{search} );
       };
       if ($ok) {
         delete $ships->{unavailable};
@@ -181,10 +199,10 @@ use JSON;
 
   my $outfh;
   open($outfh, ">$csvfile") or die "Couldn't open $csvfile, look at data file for results\n";
-  print $outfh "Empire,Planet,X,Y,Star,Zone,Orbit,Dist\n";
+  print $outfh "Empire,Planet,Body_id,X,Y,Star,Zone,Orbit\n";
   for my $ntarg (@new_targets) {
-    print $outfh join(",", $ntarg->{empire}, $ntarg->{planet}, $ntarg->{x}, $ntarg->{y},
-                    $ntarg->{sname}, $ntarg->{zone}, $ntarg->{orbit}, $ntarg->{dist}), "\n";
+    print $outfh join(",", $ntarg->{empire}, $ntarg->{pname}, $ntarg->{tid}, $ntarg->{x}, $ntarg->{y},
+                    $ntarg->{sname}, $ntarg->{zone}, $ntarg->{orbit}), "\n";
   }
   close($outfh);
 exit;
@@ -193,8 +211,15 @@ exit;
 sub set_coords {
   my ($thash) = @_;
   
+  my $pout = 'X';
+  if ($thash->{pname} ne '') {
+    $pout = $thash->{pname};
+  }
+  else {
+    $pout = $thash->{tid};
+  }
   if ( scalar @{$thash->{ships}} < 2) {
-    print "Need two ships to figure out how to target $thash->{planet}\n";
+    print "Need two ships to figure out how to target $pout\n";
     return;
   }
   my $coords = calc_coords($thash->{ships});
@@ -202,8 +227,7 @@ sub set_coords {
 #  if ($thash->{zone}) {
 #    $coords = zonify($thash, $coords);
 #  }
-  my $dist = $coords->[0]->{d};
-  print "Checking Stars for closest match to $thash->{planet}\n";
+  print "Checking Stars for closest match to $pout\n";
   $coords = star_check($thash, $coords, $stars);
   print scalar @$coords, " left after checking against stars\n";
   
@@ -413,14 +437,22 @@ sub get_tfile {
     my @fields = split(/\t/);
     my $target = {
       empire => $fields[0],
-      planet => $fields[1],
-      x      => $fields[2],
-      y      => $fields[3],
-      star   => $fields[4],
-      zone   => $fields[5],
-      oldn   => $fields[6],
+      pname  => $fields[1],
+      tid    => $fields[2],
+      x      => $fields[3],
+      y      => $fields[4],
+      star   => $fields[5],
+      zone   => $fields[6],
+      oldn   => $fields[7],
+      search => '',
       ships  => [],
     };
+    if ($target->{tid} ne '') {
+        $target->{search} = { body_id => $target->{tid} };
+    }
+    elsif ($target->{pname} ne '') {
+        $target->{search} = { body_id => $target->{pname} };
+    }
     push @tarray, $target;
   }
   return @tarray;
@@ -432,9 +464,11 @@ Usage: $0 --launch PLANET --launch PLANET --target PLANET
     --config   CONFIG_FILE
     --launch   PLANET
     --target   PLANET
+    --tid      PLANET ID
     --ship     SHIP_NAME default: Tri
-    --tfile    Output for CSV file
-    --csvfile  Output for JSON file
+    --tfile    Input file
+    --csvfile  Output for CSV file
+    --outfile  Output for JSON file
     --stars    location of stars.csv file
     --max_x    Max X coordinate
     --max_y    Max Y coordinate
@@ -443,7 +477,8 @@ Usage: $0 --launch PLANET --launch PLANET --target PLANET
 CONFIG_FILE defaults to 'lacuna.yml'
 
 --launch   Planets that you will be testing travel times from.  You need two, but more than three is not needed.
---target   Target Planets, currently you have to use the body name.  (In the future, we'll add body id)
+--target   Target Planet names.
+--tid      Target Planets by ID.
 --ship     Ship name to use.  Can be a partial.  Tri is the default.
 --tfile    Input file if you have a list to work thru.
 --csvfile  Output for a csv file for current list.
