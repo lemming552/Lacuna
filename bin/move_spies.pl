@@ -51,6 +51,7 @@ use utf8;
     'config=s',
     'dumpfile=s',
     'dryrun',
+    'aname=s',
     'h|help',
     'number=i',
     'probefile=s',
@@ -200,6 +201,9 @@ use utf8;
   }
   unless (@spies) {
     die "No spies to $dirstr!\n";
+  }
+  if ($opts{aname}) {
+    @spies = grep { $_->{name} =~ /^$opts{aname}/i } @spies;
   }
 
   my @spy_ids = map { $_->{id} }
