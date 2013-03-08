@@ -30,6 +30,8 @@ use Exception::Class;
     'maxlevel=i',
     'wait=i',
     'space',
+    'city',
+    'lab',
 #    'match=s@',
     'match=s',
     'skip=s@',
@@ -142,8 +144,15 @@ sub bstats {
       $pending = $bhash->{$bid}->{pending_build}->{seconds_remaining} if ($bhash->{$bid}->{pending_build}->{seconds_remaining} > $pending);
     }
     else {
-      next if ($opts{match} and !($bhash->{$bid}->{name} =~ /$opts{match}/));
-      if ($opts{space} or ( $bhash->{$bid}->{name} ne "Space Port" and !($bhash->{$bid}->{name} =~ /Space Station Lab|Lost City/ ) )) {
+      my $doit = 0;
+      $doit = 1 if (!($bhash->{$bid}->{name} =~ /Space Port|Lost City|Space Station Lab/));
+      $doit = 1 if ($opts{space} and ($bhash->{$bid}->{name} eq "Space Port"));
+      $doit = 1 if ($opts{city}  and ($bhash->{$bid}->{name} =~ /Lost City/ ));
+      $doit = 1 if ($opts{lab}   and ($bhash->{$bid}->{name} =~ /Space Station Lab/));
+      if ($opts{match} and !($bhash->{$bid}->{name} =~ /$opts{match}/)) {
+        $doit = 0;
+      }
+      if ($doit) {
         print "Doing $bhash->{$bid}->{name}\n";
         my $ref = $bhash->{$bid};
         $ref->{id} = $bid;

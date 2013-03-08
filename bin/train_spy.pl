@@ -9,29 +9,55 @@ use JSON;
 use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client ();
 
-  my $planet_name;
-  my $assignment;
-  my $idle    = 0;
-  my $min_off = 0;
-  my $min_def = 0;
-  my $max_off = 10000;
-  my $max_def = 10000;
-  my $number  = 10000;
-  my $sleep   = 5;
-
-  GetOptions(
-    'planet=s'     => \$planet_name,
-    'training=s'   => \$assignment,
-    'number=i'     => \$number,
-    'idle'         => \$idle,
-    'min_off=i'    => \$min_off,
-    'min_def=i'    => \$min_def,
-    'max_off=i'    => \$max_off,
-    'max_def=i'    => \$max_def,
-    'sleep=i'      => \$sleep,
+  my %opts = (
+      config        => 'lacuna.yml',
+      number        => 10000,
+      sleep         => 5,
+      min_off       => 0,
+      max_off       => 2600,
+      min_def       => 0,
+      max_def       => 2600,
+      min_level     => 0,
+      max_level     => 78,
+      min_intel     => 0,
+      max_intel     => 2600,
+      min_mayhem    => 0,
+      max_mayhem    => 2600,
+      min_politics  => 0,
+      max_politics  => 2600,
+      min_theft     => 0,
+      max_theft     => 2600,
+      dumpfile      => "log/spy_training.js",
   );
 
-  usage() if !$planet_name || !$assignment;
+  GetOptions(\%opts,
+    'h|help',
+    'planet=s',
+    'sleep=i',
+    'dryrun',
+    'training=s',
+    'number=i',
+    'from=s@',
+    'min_off=i',
+    'min_def=i',
+    'max_off=i',
+    'max_def=i',
+    'min_level=i',
+    'max_level=i',
+    'min_intel=i',
+    'max_intel=i',
+    'min_mayhem=i',
+    'max_mayhem=i',
+    'min_politics=i',
+    'max_politics=i',
+    'min_theft=i',
+    'max_theft=i',
+    'v|verbose',
+  );
+
+  usage() if $opts{h} || !$opts{planet} || !$opts{training};
+  my $df;
+  open($df, ">", "$opts{dumpfile}") or die "Could not open $opts{dumpfile}\n";
 
   my %trainhash = (
     theft     => 'TheftTraining',
@@ -41,30 +67,14 @@ use Games::Lacuna::Client ();
   );
 
   my $task;
-  unless ( $task = first { $_ =~ /^$assignment/i } keys %trainhash ) {
+  unless ( $task = first { $_ =~ /^$opts{training}/i } keys %trainhash ) {
     die("Must specify one of the following training types:\n\n", join("\n", keys %trainhash), "\n");
   }
 
-  my $cfg_file = shift(@ARGV) || 'lacuna.yml';
-  unless ( $cfg_file and -e $cfg_file ) {
-    $cfg_file = eval{
-      require File::HomeDir;
-      require File::Spec;
-      my $dist = File::HomeDir->my_dist_config('Games-Lacuna-Client');
-      File::Spec->catfile(
-        $dist,
-        'login.yml'
-      ) if $dist;
-    };
-    unless ( $cfg_file and -e $cfg_file ) {
-      die "Did not provide a config file";
-    }
-  }
-
   my $glc = Games::Lacuna::Client->new(
-	cfg_file => $cfg_file,
+	cfg_file => $opts{config},
 	prompt_captcha => 1,
-        rpc_sleep => $sleep,
+        rpc_sleep => $opts{sleep},
 	# debug    => 1,
   );
   my $json = JSON->new->utf8(1);
@@ -75,92 +85,91 @@ use Games::Lacuna::Client ();
 # reverse hash, to key by name instead of id
   my %planets = reverse %{ $empire->{planets} };
 
-  my $body      = $glc->body( id => $planets{$planet_name} );
+  my $body      = $glc->body( id => $planets{$opts{planet}} );
   my $buildings = $body->get_buildings->{buildings};
 
-  my $intel_id = first {
-        $buildings->{$_}->{url} eq '/intelligence'
-  } keys %$buildings;
+#  my $intel_id = first {
+#        $buildings->{$_}->{url} eq '/intelligence'
+#  } keys %$buildings;
 
-  my $intel = $glc->building( id => $intel_id, type => 'Intelligence' );
+#  my $intel = $glc->building( id => $intel_id, type => 'Intelligence' );
 
   my $building_id = first {
     $buildings->{$_}->{url} eq "/${task}training"
   } keys %$buildings;
 
   unless ( $building_id ) {
-    die("No $task training facility found on $planet_name.")
+    die("No $task training facility found on $opts{planet}.")
   }
 
   my $building = $glc->building( id => $building_id, type => $trainhash{ $task } );
 
-##
-  my (@spies, $page, $done);
-  while(!$done) {
-    my $spies;
-    my $ok = 0;
-    while (!$ok) {
-      $ok = eval {
-        $spies = $intel->view_spies(++$page);
-      };
-      sleep 60 unless ($ok);
-    }
-    my @trim_spies;
-    for my $spy (@{$spies->{spies}}) {
-#      print "\nChecking $spy->{name}:";
-#      print $spy->{assigned_to}{name},":",$planet_name;
-      next if lc( $spy->{assigned_to}{name} ) ne lc( $planet_name );
-#      print ":",$spy->{is_available};
-      next unless ($spy->{is_available});
-#      print ":",$spy->{assignment};
-      next if ($idle and $spy->{assignment} ne 'Idle');
-      next unless ($spy->{$task} < 2600);
+  my %dump_stats;
+  my $view;
+  my $ok = eval {
+               $view = $building->view();
+           };
+  die "No spies found for training on $opts{planet}\n" unless
+    (defined($view->{spies}->{training_costs}->{time}));
 
-      next unless ($spy->{offense_rating} >= $min_off and
-                   $spy->{offense_rating} <= $max_off and
-                   $spy->{defense_rating} >= $min_def and
-                   $spy->{defense_rating} <= $max_def);
-#      print " Using $spy->{name}\n";
-#We'll want to add task rating
-      push @trim_spies, $spy;
-    }
-    push @spies, @trim_spies;
-    $done = (25 * $page >= $spies->{spy_count} or scalar @spies > $number);
+  my @spies = @{$view->{spies}->{training_costs}->{time}};
+  my $found_spies = scalar @spies;
+  @{$dump_stats{before}} = @spies;
+  if ($opts{name}) {
+    @spies = grep { $_->{name} =~ /^$opts{aname}/i } @spies;
   }
-  print scalar @spies, " spies found from $planet_name available\n";
-  if (@spies >= $number) {
-    print " Only scanned thru first ",$page * 25, " spies.\n";
+  if ($opts{from}) {
+    my @f_spies;
+    for my $spy (@spies) {
+      if (grep { $spy->{based_from}->{name} eq $_ } @{$opts{from}}) {
+        push @f_spies, $spy;
+      }
+      @spies = @f_spies;
+    }
+  }
+  @spies = grep { $_->{offense_rating} >= $opts{min_off} and
+                  $_->{offense_rating} <= $opts{max_off} and
+                  $_->{defense_rating} >= $opts{min_def} and
+                  $_->{defense_rating} <= $opts{max_def} and
+                  $_->{intel} >= $opts{min_intel} and
+                  $_->{intel} <= $opts{max_intel} and
+                  $_->{mayhem} >= $opts{min_mayhem} and
+                  $_->{mayhem} <= $opts{max_mayhem} and
+                  $_->{politics} >= $opts{min_politics} and
+                  $_->{politics} <= $opts{max_politics} and
+                  $_->{theft} >= $opts{min_theft} and
+                  $_->{theft} <= $opts{max_theft}
+                } @spies;
+
+  if ($opts{number} and $opts{number} < scalar @spies) {
+    print "Training $opts{number} of $found_spies spies.\n";
+    splice @spies, $opts{number};
   }
   else {
-    print "\n";
+    print "Training ",scalar @spies," of $found_spies spies.\n";
   }
-###
-
-  my $trained = 0;
-SPY:
-  for my $spy ( @spies ) {
-    if ($trained++ > $number) {
-      print "All trained\n";
-      last;
+  @{$dump_stats{culled}} = @spies;
+  
+  unless ($opts{dryrun}) {
+    my @returns;
+    for my $spy (@spies) {
+      my $return;
+      my $ok = eval {
+        $return = $building->train_spy( $spy->{spy_id} );
+      };
+      push @returns, $return;
+      if ($@) {
+        warn "Error: $@\n";
+        sleep 60;
+        next;
+      }
+      my $study = $return->{trained} ? "" : "not ";
+      printf("%7d - %s from %s, %strained in %s\n", $spy->{spy_id}, $spy->{name}, $spy->{based_from}->{name}, $study, $task);
     }
-
-#    next SPY unless $spy->{assignment} eq 'Idle';
-#    print "Trying to train $spy->{name} in $task\n";
-
-    my $return;
-    eval {
-      $return = $building->train_spy( $spy->{ id } );
-    };
-
-    if ($@) {
-      warn "Error: $@\n";
-      next;
-    }
-#    print $json->pretty->canonical->encode($return);
-
-    print( $return->{trained} ? "$spy->{id} Spy trained in $task\n" : "$spy->{id} Spy not trained in $task\n" );
+    $dump_stats{return} = \@returns;
   }
-
+  print $df $json->pretty->canonical->encode(\%dump_stats);
+  close $df;
 exit;
 
 
@@ -169,12 +178,22 @@ sub usage {
 Usage: $0 CONFIG_FILE
     --planet   PLANET
     --training TYPE
+    --from     PLANET spy is based from
     --number   Number of spies to train
-    --idle     Only train Idle spies and don't take spies off Counter Espionage
     --min_off  Only train spies with Offense >= min_off
     --min_def  Only train spies with Defense >= min_def
     --max_off  Only train spies with Offense <= max_off
     --max_def  Only train spies with Defense <= max_def
+    --min_level
+    --max_level
+    --min_intel
+    --max_intel
+    --min_mayhem
+    --max_mayhem
+    --min_politics
+    --max_politics
+    --min_theft
+    --max_theft
     --sleep    Set rpc_sleep to sleep number to avoid hitting the rpc limit
 
 CONFIG_FILE  defaults to 'lacuna.yml'

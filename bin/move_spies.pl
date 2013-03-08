@@ -118,8 +118,8 @@ use utf8;
   my $from_id; my $from_own; my $from_name;
   my $to_id;   my $to_own;   my $to_name;
   if ($opts{id}) {
-    $from_id = $opts{from};
-    $to_id   = $opts{to};
+    $from_id = $opts{to};
+    $to_id   = $opts{from};
     ($from_name, $from_own) = get_pname($from_id, $empire);
     ($to_name,   $to_own)   = get_pname($to_id,   $empire);
   }
