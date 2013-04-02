@@ -124,8 +124,8 @@ use Games::Lacuna::Client ();
       if (grep { $spy->{based_from}->{name} eq $_ } @{$opts{from}}) {
         push @f_spies, $spy;
       }
-      @spies = @f_spies;
     }
+    @spies = @f_spies;
   }
   @spies = grep { $_->{offense_rating} >= $opts{min_off} and
                   $_->{offense_rating} <= $opts{max_off} and
