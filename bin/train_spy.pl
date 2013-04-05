@@ -33,6 +33,7 @@ use Games::Lacuna::Client ();
   GetOptions(\%opts,
     'h|help',
     'planet=s',
+    'counter',
     'sleep=i',
     'dryrun',
     'training=s',
@@ -88,12 +89,6 @@ use Games::Lacuna::Client ();
   my $body      = $glc->body( id => $planets{$opts{planet}} );
   my $buildings = $body->get_buildings->{buildings};
 
-#  my $intel_id = first {
-#        $buildings->{$_}->{url} eq '/intelligence'
-#  } keys %$buildings;
-
-#  my $intel = $glc->building( id => $intel_id, type => 'Intelligence' );
-
   my $building_id = first {
     $buildings->{$_}->{url} eq "/${task}training"
   } keys %$buildings;
@@ -118,9 +113,13 @@ use Games::Lacuna::Client ();
   if ($opts{name}) {
     @spies = grep { $_->{name} =~ /^$opts{aname}/i } @spies;
   }
+  if (!$opts{counter}) {
+    @spies = grep { $_->{task} =~ /Idle/ } @spies;
+  }
   if ($opts{from}) {
     my @f_spies;
     for my $spy (@spies) {
+#      print "Checking $spy->{name} from $spy->{based_from}->{name}\n";
       if (grep { $spy->{based_from}->{name} eq $_ } @{$opts{from}}) {
         push @f_spies, $spy;
       }
@@ -164,7 +163,9 @@ use Games::Lacuna::Client ();
         next;
       }
       my $study = $return->{trained} ? "" : "not ";
-      printf("%7d - %s from %s, %strained in %s\n", $spy->{spy_id}, $spy->{name}, $spy->{based_from}->{name}, $study, $task);
+      printf("%7d - %s from %s, %strained in %s\n",
+             $spy->{spy_id}, $spy->{name}, $spy->{based_from}->{name},
+             $study, $task);
     }
     $dump_stats{return} = \@returns;
   }
@@ -176,9 +177,10 @@ exit;
 sub usage {
   die <<"END_USAGE";
 Usage: $0 CONFIG_FILE
-    --planet   PLANET
-    --training TYPE
+    --planet   PLANET spy is currently on
     --from     PLANET spy is based from
+    --training TYPE
+    --counter  Train spies that are currently doing the task counter espionage
     --number   Number of spies to train
     --min_off  Only train spies with Offense >= min_off
     --min_def  Only train spies with Defense >= min_def
