@@ -19,6 +19,7 @@ use Exception::Class;
         dumpfile => "log/space_builds.js",
         station => 0,
         wait    => 14 * 60 * 60,
+        number  => 31,
   );
 
   GetOptions(\%opts,
