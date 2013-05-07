@@ -43,7 +43,7 @@ usage() if $help or scalar @planets == 0 or !$stype;
 
 my @ship_types = ship_types();
 
-my $ship_build = first { $_ =~ /$stype/ } @ship_types;
+my $ship_build = first { $_ =~ /^$stype/i } @ship_types;
 
 unless ($ship_build) {
     print "$stype is an unknown type!\n";
