@@ -75,33 +75,17 @@ use Exception::Class;
         next;
       }
       my ($sarr) = bstats($buildings, $station);
+      my @bids = map { $_->{id} } @$sarr;
+      my $return = $planet->repair_list(\@bids);
       for my $bld (@$sarr) {
-        printf "%7d %20s l:%2d x:%2d y:%2d %2d\n",
-                 $bld->{id}, $bld->{name},
-                 $bld->{level}, $bld->{x}, $bld->{y}, $bld->{efficiency};
-        my $ok;
-        my $bldstat = "Bad";
-        $ok = eval {
-          my $type = get_type_from_url($bld->{url});
-          my $bldpnt = $glc->building( id => $bld->{id}, type => $type);
-          $bldstat = $bldpnt->repair();
-        };
-        unless ($ok) {
-          my $err = $@;
-          if ($err =~ /Not enough resources to do a partial repair/) {
-            print "$err\n";
-            last;
-          }
-          elsif ($err =~ /The repair order has been delayed pending a parliamentary/) {
-            print "Vote request submitted\n";
-          }
-          else {
-            print $err,"\n";
-            last;
-          }
+        my $cur = $return->{buildings}->{$bld->{id}}->{efficiency};
+        my $old = $bld->{efficiency};
+        $return->{buildings}->{$bld->{id}}->{efficiency_old} = $old;
+        if ($old != $cur) {
+          printf "%25s %2d/%2d repaired %3d percent to %3d percent.\n", $bld->{name}, $bld->{x}, $bld->{y}, $cur - $old, $cur;
         }
       }
-      $status->{"$pname"} = $sarr;
+      $status->{"$pname"} = $return->{buildings};
       print "Done with $pname\n";
       push @skip_planets, $pname;
     }
@@ -135,34 +119,16 @@ sub bstats {
     next if (($bhash->{$bid}->{name} =~ /Platform/) && (!$opts{platforms}));
     my $ref = $bhash->{$bid};
     $ref->{id} = $bid;
-    if ($ref->{efficiency} < 100) {
-      $ref->{repair_costs} = {
-          food   => 1_000_000_000,
-          ore    => 1_000_000_000,
-          water  => 1_000_000_000,
-          energy => 1_000_000_000,
-        };
-      if ($opts{ordered}) {
-        my $bldstat;
-        my $ok = eval {
-          my $type = get_type_from_url($ref->{url});
-          my $bldpnt = $glc->building( id => $ref->{id}, type => $type);
-          $bldstat = $bldpnt->view()->{building}->{repair_costs};
-        };
-        if ($ok) {
-          $ref->{repair_costs} = $bldstat;
-        }
-      }
+    if ($ref->{repair_costs}) {
+      push @sarr, $ref if ($ref->{efficiency} < 100);
     }
-    else {
-      next;
-    }
-    push @sarr, $ref if ($ref->{efficiency} < 100);
   }
-  @sarr = sort { repair_cost($a->{repair_costs}) <=> repair_cost($b->{repair_costs}) ||
+  if ($opts{ordered}) {
+    @sarr = sort { repair_cost($a->{repair_costs}) <=> repair_cost($b->{repair_costs}) ||
                  $b->{efficiency} <=> $a->{efficiency} ||
                  $a->{x} <=> $b->{x} ||
                  $a->{y} <=> $b->{y} } @sarr;
+  }
   return (\@sarr);
 }
 
