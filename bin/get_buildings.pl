@@ -14,20 +14,25 @@ use Exception::Class;
   my %opts = (
         h => 0,
         v => 0,
-        planet => '',
         config => "lacuna.yml",
         dumpfile => "data/data_builds.js",
+        layout => 0,
         station => 0,
+        sleep   => 2,
         shipyard => 0,
         shipfile => "data/shipyards.js",
+        layfile  => "data/layout.js",
   );
 
   GetOptions(\%opts,
     'h|help',
     'v|verbose',
-    'planet=s',
+    'planet=s@',
     'config=s',
     'dumpfile=s',
+    'layout',
+    'layfile=s',
+    'sleep',
     'station',
     'shipyard',
     'shipfile=s',
@@ -37,6 +42,7 @@ use Exception::Class;
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $opts{'config'} || "lacuna.yml",
+    rpc_sleep => $opts{'sleep'},
     # debug    => 1,
   );
 
@@ -49,24 +55,30 @@ use Exception::Class;
   else {
     open(OUTPUT, ">", $opts{'dumpfile'}) || die "Could not open $opts{'dumpfile'}";
   }
+  if ($opts{layout}) {
+    open(LAYOUT, ">", $opts{'layfile'}) || die "Could not open $opts{'layfile'}";
+  }
 
   my $status;
+  my $layout;
   my $empire = $glc->empire->get_status->{empire};
 
 # Get planets
   my %planets = map { $empire->{planets}{$_}, $_ } keys %{$empire->{planets}};
   $status->{planets} = \%planets;
 
-  for my $planet_name (keys %planets) {
-    verbose("Inspecting $planet_name\n");
-    my $planet    = $glc->body(id => $planets{$planet_name});
+  for my $pname (keys %planets) {
+    next if ($opts{planet} and not (grep { $pname eq $_ } @{$opts{planet}}));
+    verbose("Inspecting $pname\n");
+    my $planet    = $glc->body(id => $planets{$pname});
     my $result    = $planet->get_buildings;
 #    if ($result->{status}{body}{type} eq 'space station' && !$opts{'station'}) {
-#      verbose("Skipping Space Station: $planet_name\n");
+#      verbose("Skipping Space Station: $pname\n");
 #      next;
 #    }
     my $buildings = $result->{buildings};
     my @keys = (keys %$buildings);
+    my @layout;
     for my $bldid (@keys) {
       $buildings->{$bldid}->{leveled} = $buildings->{$bldid}->{level};
       if ($opts{shipyard}) {
@@ -78,12 +90,27 @@ use Exception::Class;
           $buildings->{$bldid}->{reserve} = 10;
         }
       }
+      if ($opts{layout}) {
+        push @layout, { id => $bldid,
+                        name => $buildings->{$bldid}->{name},
+                        x => $buildings->{$bldid}->{x},
+                        y => $buildings->{$bldid}->{y},
+                      };
+      }
     }
-    $status->{$planet_name} = $buildings;
+    if ($opts{layout}) {
+      @layout = sort {$a->{x} <=> $b->{x} || $a->{y} <=> $b->{y}} @layout;
+      $layout->{$pname} = \@layout;
+    }
+    $status->{$pname} = $buildings;
   }
 
- print OUTPUT $json->pretty->canonical->encode($status);
- close(OUTPUT);
+  if ($opts{layout}) {
+    print LAYOUT $json->pretty->canonical->encode($layout);
+    close(LAYOUT);
+  }
+  print OUTPUT $json->pretty->canonical->encode($status);
+  close(OUTPUT);
 
 exit;
 
@@ -125,9 +152,9 @@ sub diag {
 }
 
 sub normalize_planet {
-    my ($planet_name) = @_;
+    my ($pname) = @_;
 
-    $planet_name =~ s/\W//g;
-    $planet_name = lc($planet_name);
-    return $planet_name;
+    $pname =~ s/\W//g;
+    $pname = lc($pname);
+    return $pname;
 }
