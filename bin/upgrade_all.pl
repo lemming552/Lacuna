@@ -74,7 +74,7 @@ use Exception::Class;
   my @plist = planet_list(\%planets, \%opts);
 
   my $keep_going = 1;
-  my $lowestqueuetimer = 60*60*24-1;
+  my $lowestqueuetimer = $opts{wait} - 1;
   my $currentqueuetimer;
   do {
     my $pname;
@@ -140,7 +140,7 @@ use Exception::Class;
     if (keys %planets) {
       print "Clearing Queue for ",sec2str($lowestqueuetimer),".\n";
       sleep $lowestqueuetimer if $lowestqueuetimer > 0;
-      $lowestqueuetimer = 60*60*24-1;
+      $lowestqueuetimer = $opts{wait} - 1;
     }
     else {
       print "Nothing Else to do.\n";
