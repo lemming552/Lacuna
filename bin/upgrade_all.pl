@@ -1,6 +1,10 @@
 #!/usr/bin/env perl
 #
 # Add ability to define which planets not to do
+# Added spytrain building set option for upgrading intel buildings
+# corrected catching lowest queue time for waiting to next cycle beginning
+# corrected nonselected buildings upgrading when selecting building sets off of an option
+# default wait time is now 14 days!
 
 use strict;
 use warnings;
@@ -20,7 +24,7 @@ use Exception::Class;
         dumpfile => "log/all_builds.js",
         station => 0,
         maxadd  => 31,
-        wait    => 24 * 60 * 60,
+        wait    => 14 * 24 * 60 * 60,
         sleep  => 1,
         extra  => [],
         noup   => [],
@@ -41,6 +45,9 @@ use Exception::Class;
     'junk',
     'glyph',
     'space',
+    'spytrain',
+    'allother',
+    'oddballs',
     'city',
     'lab',
     'match=s@',
@@ -173,7 +180,7 @@ sub planet_list {
 }
 
 sub set_items {
-  my $unless = [
+  my $oddballs = [
   "Beach [1]",
   "Beach [10]",
   "Beach [11]",
@@ -199,6 +206,91 @@ sub set_items {
   "Subspace Supply Depot",
   "Supply Pod",
   "The Dillon Forge",
+  "Deployed Bleeder",
+  "Halls of Vrbansk",
+  "Interstellar Broadcast System",
+  "Opera House",
+  "Parliament",
+  "Police Station",
+  "Station Command Center",
+  "Culinary Institute",
+  ];
+  my $allother = [
+  "Algae Cropper",
+  "Algae Syrup Bottler",
+  "Amalgus Bean Plantation",
+  "Amalgus Bean Soup Cannery",
+  "Apple Cider Bottler",
+  "Apple Orchard",
+  "Archaeology Ministry",
+  "Art Museum",
+  "Atmospheric Evaporator",
+  "Beeldeban Herder",
+  "Beeldeban Protein Shake Factory",
+  "Bread Bakery",
+  "Capitol",
+  "Cheese Maker",
+  "Cloaking Lab",
+  "Development Ministry",
+  "Distribution Center",
+  "Embassy",
+  "Energy Reserve",
+  "Entertainment District",
+  "Fission Reactor",
+  "Food Reserve",
+  "Fusion Reactor",
+  "Gas Giant Lab",
+  "Genetics Lab",
+  "Geo Energy Plant",
+  "Hydrocarbon Energy Plant",
+  "Lapis Orchard",
+  "Lapis Pie Bakery",
+  "Luxury Housing",
+  "Malcud Burger Packer",
+  "Malcud Fungus Farm",
+  "Mercenaries Guild",
+  "Mine",
+  "Mining Ministry",
+  "Mission Command",
+  "Munitions Lab",
+  "Network 19 Affiliate",
+  "Observatory",
+  "Ore Refinery",
+  "Ore Storage Tanks",
+  "Oversight Ministry",
+  "Park",
+  "Corn Meal Grinder",
+  "Corn Plantation",
+  "Dairy Farm",
+  "Denton Root Chip Frier",
+  "Denton Root Patch",
+  "Pilot Training Facility",
+  "Planetary Command Center",
+  "Potato Pancake Factory",
+  "Propulsion System Factory",
+  "Shield Against Weapons",
+  "Shipyard",
+  "Singularity Energy Plant",
+  "Stockpile",
+  "Subspace Transporter",
+  "Terraforming Lab",
+  "Terraforming Platform",
+  "Theme Park",
+  "Trade Ministry",
+  "University",
+  "Warehouse",
+  "Waste Digester",
+  "Waste Energy Plant",
+  "Waste Exchanger",
+  "Waste Recycling Center",
+  "Waste Sequestration Well",
+  "Waste Treatment Center",
+  "Water Production Plant",
+  "Water Purification Plant",
+  "Water Reclamation Facility",
+  "Water Storage Tank",
+  "Wheat Farm",
+  "Potato Patch"
   ];
   my $junk = [
     "Great Ball of Junk",
@@ -251,11 +343,26 @@ sub set_items {
     "Space Station Lab (C)",
     "Space Station Lab (D)",
   ];
+  my $spytrain = [
+    "Theft Training",
+    "Politics Training",
+    "Mayhem Training",
+    "Intel Training",
+    "Espionage Ministry",
+    "Security Ministry",
+    "Intelligence Ministry"
+  ];
   if ($opts{junk}) {
     push @{$opts{extra}}, @$junk;
   }
   else {
     push @{$opts{noup}}, @$junk;
+  } 
+  if ($opts{spytrain}) {
+    push @{$opts{extra}}, @$spytrain;
+  }
+  else {
+    push @{$opts{noup}}, @$spytrain;
   }
   if ($opts{glyph}) {
     push @{$opts{extra}}, @$glyph;
@@ -281,7 +388,18 @@ sub set_items {
   else {
     push @{$opts{noup}}, @$lab;
   }
-  push @{$opts{noup}}, @$unless;
+  if ($opts{allother}) {
+    push @{$opts{extra}}, @$allother;
+  }
+  else {
+    push @{$opts{noup}}, @$allother;
+  }
+  if ($opts{oddballs}) {
+    push @{$opts{extra}}, @$oddballs;
+  }
+  else {
+    push @{$opts{noup}}, @$oddballs;
+  }
 
 #  print "Extra: ",join(", ", @{$opts{extra}}), "\n";
 #  print "Skip : ",join(", ", @{$opts{noup}}), "\n";
@@ -405,6 +523,9 @@ Options:
   --space            - Upgrade spaceports
   --city             - Upgrade LCOT
   --lab              - Upgrade labs
+  --spytrain         - Upgrade Spy Training Facilities
+  --allother         - Upgrade all other items
+  --oddballs         - Upgrade oddball items
   --match STRING     - Only upgrade matching building names
   --noup  STRING     - Skip building names (multiple allowed)
   --extra STRING     - Add matching names to usual list to upgrade
@@ -543,7 +664,6 @@ sub bld_names {
   "Ore Refinery",
   "Ore Storage Tanks",
   "Oversight Ministry",
-  "Potato Pancake Factory",
   "Pantheon of Hagness",
   "Park",
   "Parliament",
