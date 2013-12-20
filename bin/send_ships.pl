@@ -34,6 +34,9 @@ my $sleep;
 my $seconds;
 my $rename;
 my $dryrun;
+my $scuttlecombat = 0;
+my $scuttlestealth = 0;
+my $scuttleholdsize = 0;
 
 GetOptions(
     'ship=s@'           => \@ship_names,
@@ -54,13 +57,16 @@ GetOptions(
     'seconds=i'         => \$seconds,
     'rename'            => \$rename,
     'dryrun|dry-run'    => \$dryrun,
+    'scuttlecombat=i'   => \$scuttlecombat,
+    'scuttlestealth=i' => \$scuttlestealth,
+    'scuttleholdsize=i' => \$scuttleholdsize,
 );
 
 usage() if !@ship_names && !@ship_types;
 
 usage() if !$from;
 
-usage() if !$star && !$planet && !$own_star && !defined $x && !defined $y;
+usage() if (!$star && !$planet && !$own_star && $scuttlecombat eq 0 && $scuttlestealth eq 0 && $scuttleholdsize eq 0 && !defined $x && !defined $y);
 
 usage() if defined $x && !defined $y;
 usage() if defined $y && !defined $x;
@@ -128,6 +134,9 @@ elsif ( $own_star ) {
     $target      = { star_id => $body->{star_id} };
     $target_name = "own star";
 }
+elsif ( $scuttlecombat != 0 or $scuttlestealth != 0 or $scuttleholdsize != 0 ) {
+    printf "Scuttle time!\n";
+}
 else {
     die "target arguments missing\n";
 }
@@ -146,15 +155,26 @@ my $space_port_id = first {
     } keys %$buildings;
 
 my $space_port = $client->building( id => $space_port_id, type => 'SpacePort' );
+my $ships;
 
-my $ships = request(
-    object => $space_port,
-    method => 'get_ships_for',
-    params => [
+if ( $scuttlecombat != 0 or $scuttlestealth != 0 or $scuttleholdsize != 0 ) {
+    $ships = $space_port->view_all_ships(
+        {
+            no_paging => 1,
+        },
+    )->{ships};
+}
+else{
+    $ships = request(
+        object => $space_port,
+        method => 'get_ships_for',
+        params => [
         $planets{$from},
         $target,
     ],
-)->{available};
+    )->{available};
+}
+
 
 print "Total of ", scalar @$ships, " found. ";
 my @ships;
@@ -165,7 +185,7 @@ for my $ship ( @$ships ) {
     
     push @ships, $ship;
 }
-print scalar @ships," qualify.\n";
+print scalar @ships," qualify for type.\n";
 
 # if --leave is used, try to leave as many as possible of the *wrong*
 # speed, so we have more to send
@@ -255,8 +275,9 @@ if ( $fleet && !$fleet_speed && @ships == 1 ) {
 
 my @fleet;
 
+my $shipcount=0;
 for my $ship (@ships) {
-    if ( $fleet ) {
+    if ( $fleet && $scuttlecombat != 0 && $scuttlestealth != 0 && $scuttleholdsize != 0 ) {
         push @fleet, $ship;
         
         if ( @fleet == $ships_per_fleet ) {
@@ -264,9 +285,33 @@ for my $ship (@ships) {
             undef @fleet;
         }
     }
+    elsif ($scuttlecombat != 0) {
+        if ($ship->{combat}<=$scuttlecombat) {
+          printf "Scuttlling $ship->{type_human} with combat at $ship->{combat}\n";
+          scuttle_ship($ship);
+          $shipcount +=1;
+        }
+    }
+    elsif ($scuttlestealth != 0) {
+        if ($ship->{stealth}<=$scuttlestealth) {
+          printf "Scuttlling $ship->{type_human} with stealth at $ship->{stealth}\n";
+          scuttle_ship($ship);
+          $shipcount +=1;
+        }
+    }
+    elsif ($scuttleholdsize != 0) {
+        if ($ship->{hold_size}<=$scuttleholdsize) {
+          printf "Scuttlling $ship->{type_human} with hold size at $ship->{hold_size}\n";
+          scuttle_ship($ship);
+          $shipcount +=1;
+        }
+    }
     else {
         send_ship( $ship );
     }
+}
+if ( $scuttlecombat != 0 or $scuttlestealth != 0 or $scuttleholdsize != 0 ){
+  printf "$shipcount Ships Scuttled.  Done.\n";
 }
 
 if ( @fleet ) {
@@ -325,6 +370,17 @@ sub send_ship {
         $return->{ship}{from}{id},
         $return->{ship}{to}{name},
         $return->{ship}{to}{id};
+}
+
+sub scuttle_ship {
+    my ( $ship ) = @_;
+    my $return = request(
+        object => $space_port,
+        method => 'scuttle_ship',
+        params => [
+            $ship->{id},
+        ],
+    );
 }
 
 sub send_fleet {
@@ -432,6 +488,9 @@ Usage: $0 lacuna.yml
        --seconds     SECONDS
        --rename
        --dryrun
+       --scuttlecombat    level
+       --scuttlestealth   level
+       --scuttleholdsize  level
 
 Either of --ship_name or --type is required.
 
@@ -480,6 +539,11 @@ defense.
 
 If --dryrun is provided, nothing will be sent, but all actions that WOULD
 happen are reported
+
+-----------------Scuttling Addition
+Scuttling requires the ship type or name, and will scuttle all ships 
+with a value less than OR EQUAL TO the level you provide for 
+combat, stealth, or hold size.  You only need --planet, no destination
 
 END_USAGE
 

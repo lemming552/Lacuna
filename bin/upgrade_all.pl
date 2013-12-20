@@ -1,6 +1,10 @@
 #!/usr/bin/env perl
 #
 # Add ability to define which planets not to do
+# Added spytrain building set option for upgrading intel buildings
+# corrected catching lowest queue time for waiting to next cycle beginning
+# corrected nonselected buildings upgrading when selecting building sets off of an option
+# default wait time is now 14 days!
 
 use strict;
 use warnings;
@@ -20,7 +24,7 @@ use Exception::Class;
         dumpfile => "log/all_builds.js",
         station => 0,
         maxadd  => 31,
-        wait    => 8 * 60 * 60,
+        wait    => 14 * 24 * 60 * 60,
         sleep  => 1,
         extra  => [],
         noup   => [],
@@ -41,6 +45,9 @@ use Exception::Class;
     'junk',
     'glyph',
     'space',
+    'spytrain',
+    'allother',
+    'oddballs',
     'city',
     'lab',
     'match=s@',
@@ -70,11 +77,12 @@ use Exception::Class;
 # Get planets
   my %planets = map { $empire->{planets}{$_}, $_ } keys %{$empire->{planets}};
   $status->{planets} = \%planets;
-  my $short_time = $opts{wait} + 1;
 
   my @plist = planet_list(\%planets, \%opts);
 
   my $keep_going = 1;
+  my $lowestqueuetimer = $opts{wait} - 1;
+  my $currentqueuetimer;
   do {
     my $pname;
     my @skip_planets;
@@ -94,8 +102,7 @@ use Exception::Class;
       }
 # Station and checking for resources needed.
       my ($sarr, $pending) = bstats($buildings, $station);
-      my $seconds = $opts{wait} + 1;
-      $seconds = $pending if ($pending > 0);
+      $currentqueuetimer = $pending if ($pending > 0);
       for my $bld (@$sarr) {
         my $ok;
         my $bldstat = "Bad";
@@ -105,13 +112,13 @@ use Exception::Class;
           my $bldpnt = $glc->building( id => $bld->{id}, type => $type);
           if ($opts{dry}) {
             $reply = "dry run";
-            $seconds = $opts{wait} + 1;
+            $lowestqueuetimer = $opts{wait} - 1;
           }
           else {
             $reply = "upgrading";
             $bldstat = $bldpnt->upgrade();
-            $seconds = $bldstat->{building}->{pending_build}->{seconds_remaining};
-          }
+            $currentqueuetimer = $bldstat->{building}->{pending_build}->{seconds_remaining};
+            }
         };
         printf "%7d %10s l:%2d x:%2d y:%2d %s\n",
                  $bld->{id}, $bld->{name},
@@ -121,14 +128,16 @@ use Exception::Class;
 #          sleep 60;
         }
       }
+      if ($lowestqueuetimer > $currentqueuetimer ) {
+        $lowestqueuetimer = $currentqueuetimer;
+        printf sec2str($lowestqueuetimer);
+        printf " new lowest sleep time.\n";
+      }      
       $status->{"$pname"} = $sarr;
-      if ($seconds > $opts{wait}) {
-        print "Queue of ", sec2str($seconds),
+      if ($currentqueuetimer > $opts{wait}) {
+        print "Queue of ", sec2str($currentqueuetimer),
               " is longer than wait period of ",sec2str($opts{wait}), ", taking $pname off of list.\n";
         push @skip_planets, $pname;
-      }
-      elsif ($seconds < $short_time) {
-        $short_time = $seconds;
       }
     }
     print "Done or skipping: ",join(":", sort @skip_planets), "\n";
@@ -136,8 +145,9 @@ use Exception::Class;
       delete $planets{$pname};
     }
     if (keys %planets) {
-      print "Clearing Queue for ",sec2str($short_time),".\n";
-      sleep $short_time if $short_time > 0;
+      print "Clearing Queue for ",sec2str($lowestqueuetimer),".\n";
+      sleep $lowestqueuetimer if $lowestqueuetimer > 0;
+      $lowestqueuetimer = $opts{wait} - 1;
     }
     else {
       print "Nothing Else to do.\n";
@@ -170,7 +180,7 @@ sub planet_list {
 }
 
 sub set_items {
-  my $unless = [
+  my $oddballs = [
   "Beach [1]",
   "Beach [10]",
   "Beach [11]",
@@ -196,6 +206,91 @@ sub set_items {
   "Subspace Supply Depot",
   "Supply Pod",
   "The Dillon Forge",
+  "Deployed Bleeder",
+  "Halls of Vrbansk",
+  "Interstellar Broadcast System",
+  "Opera House",
+  "Parliament",
+  "Police Station",
+  "Station Command Center",
+  "Culinary Institute",
+  ];
+  my $allother = [
+  "Algae Cropper",
+  "Algae Syrup Bottler",
+  "Amalgus Bean Plantation",
+  "Amalgus Bean Soup Cannery",
+  "Apple Cider Bottler",
+  "Apple Orchard",
+  "Archaeology Ministry",
+  "Art Museum",
+  "Atmospheric Evaporator",
+  "Beeldeban Herder",
+  "Beeldeban Protein Shake Factory",
+  "Bread Bakery",
+  "Capitol",
+  "Cheese Maker",
+  "Cloaking Lab",
+  "Development Ministry",
+  "Distribution Center",
+  "Embassy",
+  "Energy Reserve",
+  "Entertainment District",
+  "Fission Reactor",
+  "Food Reserve",
+  "Fusion Reactor",
+  "Gas Giant Lab",
+  "Genetics Lab",
+  "Geo Energy Plant",
+  "Hydrocarbon Energy Plant",
+  "Lapis Orchard",
+  "Lapis Pie Bakery",
+  "Luxury Housing",
+  "Malcud Burger Packer",
+  "Malcud Fungus Farm",
+  "Mercenaries Guild",
+  "Mine",
+  "Mining Ministry",
+  "Mission Command",
+  "Munitions Lab",
+  "Network 19 Affiliate",
+  "Observatory",
+  "Ore Refinery",
+  "Ore Storage Tanks",
+  "Oversight Ministry",
+  "Park",
+  "Corn Meal Grinder",
+  "Corn Plantation",
+  "Dairy Farm",
+  "Denton Root Chip Frier",
+  "Denton Root Patch",
+  "Pilot Training Facility",
+  "Planetary Command Center",
+  "Potato Pancake Factory",
+  "Propulsion System Factory",
+  "Shield Against Weapons",
+  "Shipyard",
+  "Singularity Energy Plant",
+  "Stockpile",
+  "Subspace Transporter",
+  "Terraforming Lab",
+  "Terraforming Platform",
+  "Theme Park",
+  "Trade Ministry",
+  "University",
+  "Warehouse",
+  "Waste Digester",
+  "Waste Energy Plant",
+  "Waste Exchanger",
+  "Waste Recycling Center",
+  "Waste Sequestration Well",
+  "Waste Treatment Center",
+  "Water Production Plant",
+  "Water Purification Plant",
+  "Water Reclamation Facility",
+  "Water Storage Tank",
+  "Wheat Farm",
+  "Potato Patch"
   ];
   my $junk = [
     "Great Ball of Junk",
@@ -248,11 +343,26 @@ sub set_items {
     "Space Station Lab (C)",
     "Space Station Lab (D)",
   ];
+  my $spytrain = [
+    "Theft Training",
+    "Politics Training",
+    "Mayhem Training",
+    "Intel Training",
+    "Espionage Ministry",
+    "Security Ministry",
+    "Intelligence Ministry"
+  ];
   if ($opts{junk}) {
     push @{$opts{extra}}, @$junk;
   }
   else {
     push @{$opts{noup}}, @$junk;
+  } 
+  if ($opts{spytrain}) {
+    push @{$opts{extra}}, @$spytrain;
+  }
+  else {
+    push @{$opts{noup}}, @$spytrain;
   }
   if ($opts{glyph}) {
     push @{$opts{extra}}, @$glyph;
@@ -278,7 +388,18 @@ sub set_items {
   else {
     push @{$opts{noup}}, @$lab;
   }
-  push @{$opts{noup}}, @$unless;
+  if ($opts{allother}) {
+    push @{$opts{extra}}, @$allother;
+  }
+  else {
+    push @{$opts{noup}}, @$allother;
+  }
+  if ($opts{oddballs}) {
+    push @{$opts{extra}}, @$oddballs;
+  }
+  else {
+    push @{$opts{noup}}, @$oddballs;
+  }
 
 #  print "Extra: ",join(", ", @{$opts{extra}}), "\n";
 #  print "Skip : ",join(", ", @{$opts{noup}}), "\n";
@@ -402,6 +523,9 @@ Options:
   --space            - Upgrade spaceports
   --city             - Upgrade LCOT
   --lab              - Upgrade labs
+  --spytrain         - Upgrade Spy Training Facilities
+  --allother         - Upgrade all other items
+  --oddballs         - Upgrade oddball items
   --match STRING     - Only upgrade matching building names
   --noup  STRING     - Skip building names (multiple allowed)
   --extra STRING     - Add matching names to usual list to upgrade
@@ -540,7 +664,6 @@ sub bld_names {
   "Ore Refinery",
   "Ore Storage Tanks",
   "Oversight Ministry",
-  "Potato Pancake Factory",
   "Pantheon of Hagness",
   "Park",
   "Parliament",
