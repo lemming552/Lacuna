@@ -9,17 +9,19 @@ use Getopt::Long          (qw(GetOptions));
 
 my @planets;
 my $remove;
-my $sleep = 1;
+my $rpc_sleep = 1;
 my $help;
+my $cfg_file = 'lacuna.yml';
 
+$cfg_file = shift(@ARGV) if @ARGV and $ARGV[0] !~ /^\-/;
 GetOptions(
     'planet=s@'          => \@planets,
     'remove|demolish'    => \$remove,
-    'sleep'              => \$sleep,
+    'sleep'              => \$rpc_sleep,
     'help'               => \$help,
+    'config'             => \$cfg_file,
 );
 
-my $cfg_file = shift(@ARGV) || 'lacuna.yml';
 unless ( $cfg_file and -e $cfg_file ) {
   $cfg_file = eval{
     require File::HomeDir;
@@ -38,7 +40,7 @@ unless ( $cfg_file and -e $cfg_file ) {
 my $glc = Games::Lacuna::Client->new(
 	cfg_file => $cfg_file,
         prompt_captcha => 1,
-        rpc_sleep => $sleep,
+        rpc_sleep => $rpc_sleep,
 	# debug    => 1,
 );
 
@@ -108,3 +110,22 @@ for my $pname ( sort keys %planets ) {
     }
 }
 
+sub usage {
+    print STDERR <<END;
+Usage: $0 [options]
+
+This script will remove fissures from your colonies provided
+there is enough ore to repair and seal them.
+
+Options:
+
+  --config <file> - GLC config, defaults to lacuna.yml
+  --planet <name> - Build only on the specified planet(s)
+  --remove
+  --demolish
+  'sleep'              => \$sleep,
+  --help
+END
+
+    exit 1;
+}
