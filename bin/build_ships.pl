@@ -478,8 +478,11 @@ sub ship_types {
           spy_pod
           spy_shuttle
           stake
+          supply_pod
           supply_pod2
+          supply_pod3
           supply_pod4
+          supply_pod5
           surveyor
           sweeper
           terraforming_platform_ship
