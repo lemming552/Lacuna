@@ -228,6 +228,9 @@ How much of a pause between calls and planets to avoid hitting any RPC/min limit
     --noterm
 If used, will not test to see if session is interactive and will act as if it is not.
 
+Example pass/fail arguments:
+'^install', '^upgrade', '^demolish dent', '^seize', '^rename', '^repair', '^transfer', '^fire' , '^neutral', '^fire', '^repeal'
+
 Changes:
 The --planet opt has been renamed to --station.
 Using --planet will throw an error.
