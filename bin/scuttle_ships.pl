@@ -129,25 +129,25 @@ PLANET:
           if (!$opts{legacy} and grep { $ship->{type} eq $_ } @legacy) {
             next SHIPS if ($ship->{berth_level} == 1);
           }
-          if ($opts{combat} and $ship->{combat}) {
+          if ($opts{combat}) {
             if ($ship->{combat} < $opts{combat}) {
               push @ships, $ship->{id};
               next SHIPS;
             }
           }
-          if ($opts{stealth} and $ship->{stealth}) {
+          if ($opts{stealth}) {
             if ($ship->{stealth} < $opts{stealth}) {
               push @ships, $ship->{id};
               next SHIPS;
             }
           }
-          if ($opts{hold} and $ship->{hold_size}) {
+          if ($opts{hold}) {
             if ($ship->{hold_size} < $opts{hold}) {
               push @ships, $ship->{id};
               next SHIPS;
             }
           }
-          if ($opts{speed} and $ship->{speed}) {
+          if ($opts{speed}) {
             if ($ship->{speed} < $opts{speed}) {
               push @ships, $ship->{id};
               next SHIPS;
