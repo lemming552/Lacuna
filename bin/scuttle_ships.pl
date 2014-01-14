@@ -310,6 +310,7 @@ Options:
   --planet           - list of planets to scuttle from, if omitted
                        all planets will be enumerated through
   --skip             - list of planets to skip
+  --number           - scuttle up to this number of ships.
   --hold             - scuttle ships lower than this hold size
   --combat           - scuttle ships lower than this combat level
   --stealth          - scuttle ships lower than this stealth level
