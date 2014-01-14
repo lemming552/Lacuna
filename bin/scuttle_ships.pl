@@ -35,7 +35,7 @@ use Exception::Class;
         sleep   => 1,
         confirm => 1,
   );
-  
+
   my $ok = GetOptions(\%opts,
     'config=s',
     'types=s@',
@@ -51,6 +51,7 @@ use Exception::Class;
     'outfile=s',
     'dump',
     'sleep=i',
+    'number=i',
   );
 
   usage() unless $ok;
@@ -76,7 +77,7 @@ use Exception::Class;
 # Get planets
   my %planets = map { $empire->{planets}{$_}, $_ } keys %{$empire->{planets}};
   $status->{planets} = \%planets;
-  
+
   my $topok;
   my @plist = planet_list(\%planets, \%opts);
 
@@ -89,8 +90,8 @@ use Exception::Class;
       task => [ "Docked" ],
       type => $opts{types},
   };
-    
-  $topok = eval {  
+
+  $topok = eval {
 PLANET:
     for $pname (@plist) {
       print "Inspecting $pname\n";
@@ -119,7 +120,7 @@ PLANET:
         $ships = $sp_pt->view_all_ships($paging,$filter)->{ships};
         $status->{"$pname"}->{ships} = $ships;
         print "Total of ", scalar @$ships, " found.\n";
-            
+
         my $shiptypescount=0;
         SHIPS:
         for my $ship ( @$ships ) {
@@ -154,12 +155,16 @@ PLANET:
             }
           }
         }
-        print $shiptypescount," qualify for type.\n";            
+        print $shiptypescount," qualify for type.\n";
         print scalar @ships," qualify criteria selected.\n";
         if (scalar @ships == 0) {
           no warnings;
           next PLANET;
-        }            
+        }
+        if (scalar @ships > $opts{number}) {
+          my @new_arr = splice @ships, (scalar @ships - $opts{number});
+          @ships = @new_arr;
+        }
         print "Scuttling ids->",join(":",@ships),"\n";
 #ask for confirmation unless specifically set to false in options
         if (!$opts{confirm}) {
@@ -171,7 +176,7 @@ PLANET:
           print "Y to scuttle ships from $pname, N to skip.\n";
           $conf = <>;
           if ($conf =~ /^Y/i) {
-            $status->{"$pname"}->{scuttle} = $sp_pt->mass_scuttle_ship(\@ships);               
+            $status->{"$pname"}->{scuttle} = $sp_pt->mass_scuttle_ship(\@ships);
           }
           no warnings;
         }
@@ -180,16 +185,16 @@ PLANET:
         if ( $@ =~ "Slow down" ) {
           print "Gotta slow down... sleeping for 60\n";
           sleep(60);
-        }               
+        }
         else {
           print "$@\n";
-        }                          
-      } 
+        }
+      }
       else {
         print scalar @ships," ships scuttled from $pname.\n";
       }
-    }   
-  }; 
+    }
+  };
   unless ($topok) {
     if ( $@ =~ "Slow down" ) {
       print "Gotta slow down... sleeping for 60\n";
@@ -198,8 +203,8 @@ PLANET:
     else {
       print "$@\n";
     }
-  }   
-   
+  }
+
   if ($opts{dump}) {
     print OUTPUT $json->pretty->canonical->encode($status);
     close(OUTPUT);
@@ -238,32 +243,32 @@ sub planet_list {
 
 sub request {
     my ( %params )= @_;
-    
+
     my $method = delete $params{method};
     my $object = delete $params{object};
     my $params = delete $params{params} || [];
-    
+
     my $request;
     my $error;
-    
+
 RPC_ATTEMPT:
     for ( 1 .. $login_attempts ) {
-        
+
         try {
             $request = $object->$method(@$params);
         }
         catch {
             $error = $_;
-            
+
             # if session expired, try again without a session
             my $client = $object->client;
-            
+
             if ( $client->{session_id} && $error =~ /Session expired/i ) {
-                
+
                 warn "GLC session expired, trying again without session\n";
-                
+
                 delete $client->{session_id};
-                
+
                 sleep $reattempt_wait;
             }
             elsif ($error =~ /1010/) {
@@ -277,16 +282,16 @@ RPC_ATTEMPT:
                 last RPC_ATTEMPT;
             }
         };
-        
+
         last RPC_ATTEMPT
             if $request;
     }
-    
+
     if (!$request) {
         warn "RPC request failed $login_attempts times, giving up\n";
         die $error;
     }
-    
+
     return $request;
 }
 
@@ -296,7 +301,7 @@ Usage: $0 [options]
 
 This program will scuttle ships on all your planets below a
 certain hold size, speed, combat level, or stealth level.  If you
-use multiple criteria such as stealth and combat, it will scuttle 
+use multiple criteria such as stealth and combat, it will scuttle
 ships that are below that stealth OR combat.
 
 Options:
@@ -313,7 +318,7 @@ Options:
                        ex: snark3, supply_pod2, placebo5
   --legacy           - scuttle legacy ships (berth level 1 hulks etc..)
   --noconfirm        - Will scuttle ships without confirmation for
-                       each planet if set to 1                
+                       each planet if set to 1
 END
   exit 1;
 }
