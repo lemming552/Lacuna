@@ -11,12 +11,14 @@ use JSON;
   my %opts = (
     dump_file => "log/bfg_data.js",
     config    => "lacuna.yml",
+    reason    => "Destroy!!!",
   );
 
   my $ok = GetOptions(\%opts,
     'dump=s',
     'config=s',
     'station=s',
+    'reason=s',
     'sid=i',
 #    'target=s',
     'tid=i',
@@ -79,7 +81,7 @@ print "Station warming up\n";
 
   my @out;
   $output = $glc->building( id => $parl, type => 'Parliament' )
-               ->propose_fire_bfg($opts{tid}, "Die Die Die");
+               ->propose_fire_bfg($opts{tid}, "$opts{reason}");
   push @out, $output;
 
   print $fh $json->pretty->canonical->encode(\@out);

@@ -26,6 +26,8 @@ my $share = 1;
 my $x;
 my $y;
 my $star;
+my $star_id;
+my $body_id;
 my $own_star;
 my $planet;
 my $fleet = 1;
@@ -46,6 +48,8 @@ GetOptions(
     'x=i'               => \$x,
     'y=i'               => \$y,
     'star=s'            => \$star,
+    'star_id=i'         => \$star_id,
+    'body_id=i'         => \$body_id,
     'planet=s'          => \$planet,
     'fleet!'            => \$fleet,
     'fleet-speed=i'     => \$fleet_speed,
@@ -60,7 +64,7 @@ usage() if !@ship_names && !@ship_types;
 
 usage() if !$from;
 
-usage() if !$star && !$planet && !$own_star && !defined $x && !defined $y;
+usage() if !$star_id && !$body_id && !$star && !$planet && !$own_star && !defined $x && !defined $y;
 
 usage() if defined $x && !defined $y;
 usage() if defined $y && !defined $x;
@@ -112,6 +116,14 @@ if ( defined $x && defined $y ) {
 elsif ( defined $star ) {
     $target      = { star_name => $star };
     $target_name = $star;
+}
+elsif ( defined $body_id ) {
+    $target      = { body_id => $body_id };
+    $target_name = $body_id;
+}
+elsif ( defined $star_id) {
+    $target      = { star_id => $star_id };
+    $target_name = $star_id;
 }
 elsif ( defined $planet ) {
     $target      = { body_name => $planet };

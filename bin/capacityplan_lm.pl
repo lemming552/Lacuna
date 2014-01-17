@@ -31,6 +31,8 @@ my $planets = $empire->{planets};
 # Potential build options
 my @options = ();
 
+my %total_hour;
+
 # Scan each planet
 foreach my $planet_id ( sort keys %$planets ) {
   my $name = $planets->{$planet_id};
@@ -67,11 +69,13 @@ foreach my $planet_id ( sort keys %$planets ) {
       $stored   = $body->{"${type}_stored"};
       $hour     = $body->{"${type}_hour"};
       $storage  = $capacity - $stored;
+      $total_hour{$type} += $hour;
     }
     else {
       $hour     = $body->{"${type}_hour"};
       $stored   = $body->{"$type"};
       $capacity = $stored;
+      $total_hour{happiness} += $hour;
     }
 
     my $label    = ucfirst($type);
@@ -111,7 +115,7 @@ foreach my $planet_id ( sort keys %$planets ) {
     } values %$buildings;
 
     $capacity = "0" if ($type eq "happiness");
-    printf "%15s - %9s - %11d/%11d %4d:%4d %9d rate",
+    printf "%15s - %9s - %18d/%18d %5d:%5d %12d rate",
                        $name, $label, $stored, $capacity, $time, $left, $hour;
     print " UPGRADING..." if @already;
     print "\n";
@@ -152,15 +156,19 @@ foreach my $planet_id ( sort keys %$planets ) {
   $a->{left} > $b->{left}
 } @options;
 
-# Print out the options
-my $n = 0;
-print "\n\n";
-print "Recommended Storage Capacity Upgrades\n";
-print "-------------------------------------\n";
-foreach my $option ( @options ) {
-  printf "Option %2d - %15s - %7s - %3dh capacity - %3dh lef\n",
-           ++$n, $option->{name}, $option->{label}, $option->{time}, $option->{left};
+
+foreach my $type ( qw{ food ore water energy waste happiness } ) {
+  printf "%15d %s\n", $total_hour{$type}, $type;
 }
+# Print out the options
+#my $n = 0;
+#print "\n\n";
+#print "Recommended Storage Capacity Upgrades\n";
+#print "-------------------------------------\n";
+#foreach my $option ( @options ) {
+#  printf "Option %2d - %15s - %7s - %3dh capacity - %3dh lef\n",
+#           ++$n, $option->{name}, $option->{label}, $option->{time}, $option->{left};
+#}
 
 exit(0);
 

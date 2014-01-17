@@ -24,7 +24,7 @@ use utf8;
     'help|h',
     'dumpfile=s',
     'config=s',
-    'layoutfile',
+    'layoutfile=s',
   );
 
   unless ( $opts{config} and -e $opts{config} ) {

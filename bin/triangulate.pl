@@ -476,7 +476,7 @@ Usage: $0 --launch PLANET --launch PLANET --target PLANET
 
 CONFIG_FILE defaults to 'lacuna.yml'
 
---launch   Planets that you will be testing travel times from.  You need two, but more than three is not needed.
+--launch   Planets that you will be testing travel times from.  You need at least two and three will make it more accurate.
 --target   Target Planet names.
 --tid      Target Planets by ID.
 --ship     Ship name to use.  Can be a partial.  Tri is the default.

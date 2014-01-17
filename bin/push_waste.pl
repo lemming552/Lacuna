@@ -57,6 +57,7 @@ my @ores = ore_types;
 
 my $client = Games::Lacuna::Client->new(
 	cfg_file => $cfg_file,
+        rpc_sleep => 1,
 	 #debug    => 1,
 );
 

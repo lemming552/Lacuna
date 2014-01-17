@@ -21,6 +21,7 @@ use Date::Format;
     v        => 0,
     config   => "lacuna.yml",
     dumpfile => $log_dir."/spy_data.js",
+    sleep    => 2,
 #                      time2str('%Y%m%dT%H%M%S%z', time).
 #                      "_$random_bit.js",
   );
@@ -33,6 +34,7 @@ use Date::Format;
     'planet=s@',
     'v|verbose',
     'all',
+    'sleep=i',
 #    'emp',
   );
 
@@ -60,7 +62,7 @@ use Date::Format;
   my $glc = Games::Lacuna::Client->new(
                  cfg_file => $opts{config},
                  prompt_captcha => 1,
-                 rpc_sleep => 2,
+                 rpc_sleep => $opts{sleep},
                  # debug    => 1,
                );
 
@@ -123,6 +125,7 @@ sub usage {
   die <<"END_USAGE";
 Usage: $0 CONFIG_FILE
     --planet     PLANET (can be called multiple times)
+    --sleep      sleep number
     --config     CONFIG_FILE  (default lacuna.yml)
     --dumpfile   DUMP_FILE (default log/spy_data.js)
     --all        Uses view_all_spies API call which gets all spies from one Int Ministry

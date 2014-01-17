@@ -41,10 +41,16 @@ use utf8;
     'minlevel=i',
     'maxqueue=i',
     'sleep=i',
+    'mining',
+    'chain',
+    'trade',
+    'travel',
+    'orbit',
+    'all',
   );
 
   usage() unless $ok;
-  usage() if $opts{help} or scalar @{$opts{planet}} == 0 or !$opts{type};
+  usage() if $opts{help} or !$opts{planet} or !$opts{type};
   usage() unless ($opts{number} or $opts{maintain});
 
   my @ship_types = ship_types();
@@ -117,6 +123,24 @@ use utf8;
       task => [ "Docked", "Building" ],
       type => "$ship_build",
     };
+    if ($opts{mining}) {
+      push @{$filter->{task}}, "Mining";
+    }
+    if ($opts{chain}) {
+      push @{$filter->{task}}, "Waste Chain", "Supply Chain";
+    }
+    if ($opts{trade}) {
+      push @{$filter->{task}}, "Waiting on Trade";
+    }
+    if ($opts{travel}) {
+      push @{$filter->{task}}, "Travelling";
+    }
+    if ($opts{orbit}) {
+      push @{$filter->{task}}, "Defend", "Orbiting";
+    }
+    if ($opts{all}) {
+      delete $filter->{task};
+    }
     my $return = eval {
                   $ship_list = $sp_pt->view_all_ships($paging, $filter);
               };
@@ -224,6 +248,12 @@ Usage: $0 --planet PLANET --number NUMBER --maintain NUMBER
   --minlevel  number     - Minimum Level of Shipyard to use. default 30.
   --maxqueue  number     - Maximum to put into any queue. default 50.
   --sleep     number     - RPC Sleep delay
+  --mining               - Include ships on mining to count toward maintanance
+  --chain                - Include ships on waste or supply chains to count toward maintanance (doesn't work yet)
+  --trade                - Include ships involved with trades.
+  --travel               - Include ships travelling.
+  --orbit                - Include ships orbiting or defending.
+  --all                  - All ships of type are included in current count.
 
 Note, this will not continue running and will only pass thru your shipyards once.  If you want to build more than your shipyards can do in one iteration, please see build_ships.pl
 

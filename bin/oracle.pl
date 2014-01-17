@@ -18,13 +18,14 @@ use utf8;
   my $starfile = "data/stars.csv";
   my $maxdist = 300;
   my $config  = "lacuna.yml";
+  my $sleep = 1;
 
   GetOptions(
     'planet=s'   => \$planet_name,
     'help|h'     => \$help,
     'stars=s'    => \$starfile,
     'data=s'     => \$datafile,
-    'maxdist=i'  => \$maxdist,
+    'sleep=i',   => \$sleep,
   );
 
   usage() if $help;
@@ -32,6 +33,7 @@ use utf8;
   
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $config,
+    rpc_sleep => $sleep,
     # debug    => 1,
   );
 
@@ -76,45 +78,22 @@ use utf8;
 # Load Stars
   my $stars = load_stars($starfile, $maxdist, $x, $y);
 
-  my $ok;
-  my @bodies;
-  foreach my $star (@$stars) {
-    print "Looking at $star->{id} ... ";
-    my $star_ok = eval {
-      $star->{info} = $oracle->get_star($star->{id})->{star};
-      return 1;
+  my (@stars, $page, $done);
+  while (!$done) {
+    my $param = {
+      session_id => $glc->{session_id},
+      building_id => $oracle_id,
+      page_number => ++$page,
+      page_size   => 200,
     };
-    if ($star_ok) {
-      print "  Retrieved.\n";
-      for my $bod (@{$star->{info}->{bodies}}) {
-        $bod->{observatory} = {
-          empire => $ename,
-          oid    => $oracle_id,
-          pid    => $planets{$planet_name},
-          pname  => $planet_name,
-          stime  => $stime,
-          ststr  => $ststr,
-          lastd  => 0,  # Initialize last Excavator time
-          moved  => [ "nobody" ],
-        };
-      }
-      push @bodies, @{$star->{info}->{bodies}};
-    }
-    else {
-      $star->{info} = "Out of Range";
-      if (my $e =  Exception::Class->caught('LacunaRPCException')) {
-        print "Star: ", $star->{id}, " - Code: ", $e->code, "\n";
-      }
-      else {
-        print " Out of Range\n";
-      }
-    }
-    sleep 1;
+    my $slist = $oracle->get_probed_stars($param);
+    push @stars, @{$slist->{stars}};
+    $done = 200 * $page >= $slist->{star_count};
   }
 
-  print $pfh $json->pretty->canonical->encode(\@bodies);
-  close($pfh);
-  print $ofh $json->pretty->canonical->encode($stars);
+#  print $pfh $json->pretty->canonical->encode(\@bodies);
+#  close($pfh);
+  print $ofh $json->pretty->canonical->encode(\@stars);
   close($ofh);
 
   print "$glc->{total_calls} api calls made.\n";

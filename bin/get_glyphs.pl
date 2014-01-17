@@ -73,8 +73,8 @@ foreach my $pname ( sort keys %planets ) {
       keys %$buildings;
 
     unless ($bld_id) {
-        print
-          "No Archaeology Ministry, Trade Ministry, or Subspace Transporter.\n";
+        print "No Archaeology Ministry, Trade Ministry, or Subspace Transporter.\n";
+        next;
     }
 
     print $buildings->{$bld_id}->{name}, " found.\n";

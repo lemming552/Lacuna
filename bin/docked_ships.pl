@@ -61,6 +61,8 @@ my $defend_str    = 'Ships on remote Defense';
 my $supply_str    = 'Ships on Supply Chains';
 my $waste_str     = 'Ships on Waste Chains';
 my $available_str = 'Docks Available';
+my $ttl_ships = 0;
+my $ttl_docks = 0;
 my @all_ships;
 my $ship_hash = {};
 
@@ -142,6 +144,7 @@ foreach my $name ( sort keys %planets ) {
     printf "%${max_length}s: %d\n",
         $total_str,
         $space_port_status->{max_ships};
+    $ttl_docks += $space_port_status->{max_ships};
     
     printf "%${max_length}s: %d\n",
         $mining_str,
@@ -168,11 +171,16 @@ foreach my $name ( sort keys %planets ) {
     printf "%${max_length}s: %d\n",
         $available_str,
         $space_port_status->{docks_available};
+    $ttl_ships += $space_port_status->{max_ships} - $space_port_status->{docks_available};
     
     push @all_ships, @$ships;
     
     print "\n";
 }
+
+print "Total number of ships: ", $ttl_ships, "\n";
+print "Total number of docks: ", $ttl_docks, "\n";
+print "Total space available: ", $ttl_docks-$ttl_ships,"\n\n";
 
 print_ships( "Total Ships", \@all_ships )
     unless $opts{planet};

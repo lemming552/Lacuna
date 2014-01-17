@@ -31,6 +31,7 @@ use utf8;
     'v|verbose',
     'h|help',
     'planet=s',
+    'orbit',
     'dump',
   );
 
@@ -106,9 +107,17 @@ use utf8;
   my $page = 1;
   while ($page) {
     my $ship_list;
-    my $return = eval {
+    my $return;
+    if ($opts{orbit}) {
+      $return = eval {
+                  $ship_list = $inc_pt->view_ships_orbiting($page);
+              };
+    }
+    else {
+      $return = eval {
                   $ship_list = $inc_pt->view_foreign_ships($page);
               };
+    }
     if ($@) {
       print "$@ error!\n";
       sleep 60;
