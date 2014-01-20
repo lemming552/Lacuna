@@ -97,22 +97,29 @@ use utf8;
     my ($x,$y) = @{$result->{status}->{body}}{'x','y'};
     my $buildings = $result->{buildings};
     my $waste_stored = $result->{status}->{body}->{waste_stored};
+    if ($result->{status}->{body}->{type} eq 'space station') {
+      print "Space Stations don't deal with waste.\n";
+      next;
+    }
   
   # Find the trade min
     my $tm_id = first {
           $buildings->{$_}->{url} eq '/trade'
     } keys %$buildings;
   
-    die "No trade ministry on this planet\n"
-  	  if !$tm_id;
+    if (!$tm_id) {
+      print "No trade ministry on this planet\n";
+      next;
+    }
   
     my $tm =  $glc->building( id => $tm_id, type => 'Trade' );
   
     unless ($tm) {
       print "No Trade Ministry!\n";
-      exit;
+      next;
     }
   
+    my $update = $opts{update};
     $result = $tm->view_waste_chains();
     
     my $curr_chain = $result->{waste_chain}->[0];
@@ -201,17 +208,17 @@ use utf8;
         if ($wanted > 0) {
           my $goal = int($waste_stored/($wanted/60)) + $waste_prod;
           if ($goal > $total) {
-            print "Can not acheive empty waste in $opts{empty}, setting max rate.\n";
+            print "Can not achieve empty waste in $opts{empty}, setting max rate.\n";
             $goal = $total;
           }
-          $opts{update} = $waste_prod - $goal;
+          $update = $waste_prod - $goal;
         }
         else {
-          $opts{update} = 0;
+          $update = 0;
         }
       }
       else {
-        $opts{update} = $waste_prod - $total;
+        $update = $waste_prod - $total;
       }
     }
   
