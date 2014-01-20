@@ -222,7 +222,7 @@ use utf8;
       }
     }
   
-    my $new_chain_hour = $waste_prod - $opts{update};
+    my $new_chain_hour = $waste_prod - $update;
     if ($opts{recalc} and $new_chain_hour != $waste_hour) {
       print "Chain per hour being changed from $waste_hour to $new_chain_hour\n";
       $result = $tm->update_waste_chain($chain_id , $new_chain_hour);
