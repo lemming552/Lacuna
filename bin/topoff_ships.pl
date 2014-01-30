@@ -249,13 +249,14 @@ Usage: $0 --planet PLANET --number NUMBER --maintain NUMBER
   --maxqueue  number     - Maximum to put into any queue. default 50.
   --sleep     number     - RPC Sleep delay
   --mining               - Include ships on mining to count toward maintanance
-  --chain                - Include ships on waste or supply chains to count toward maintanance (doesn't work yet)
+  --chain                - Include ships on waste or supply chains to count toward maintanance
   --trade                - Include ships involved with trades.
   --travel               - Include ships travelling.
   --orbit                - Include ships orbiting or defending.
   --all                  - All ships of type are included in current count.
 
-Note, this will not continue running and will only pass thru your shipyards once.  If you want to build more than your shipyards can do in one iteration, please see build_ships.pl
+Note, this will not continue running and will only pass thru your shipyards once.  If you want to build more than your shipyards can do in one iteration,
+please see build_ships.pl or use a scheduler.
 
 Examples:
   $0 --planet DOCKS --maintain 20 --number 10 --maxqueue 5 --type excav
