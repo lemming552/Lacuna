@@ -956,7 +956,7 @@ sub send_excavators {
                         } else {
                             output("Building an excavator on $planet\n");
 
-                            my $build = $yard->{yard}->build_ship('excavator');
+                            my $build = $yard->{yard}->build_ship('excavator',1);
                             my $finish = time() + $build->{building}{work}{seconds_remaining};
 
                             push @{$status->{building}{$planet}}, {
