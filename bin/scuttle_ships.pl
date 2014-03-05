@@ -34,6 +34,7 @@ use Exception::Class;
         outfile => 'log/scuttle.js',
         sleep   => 1,
         confirm => 1,
+        number  => 10000,
   );
 
   my $ok = GetOptions(\%opts,

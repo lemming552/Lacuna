@@ -16,12 +16,12 @@ lacuna --
      |--- data  (data shared between servers)
      |--- lib   (GLC lib)
      |--- norway_us1  (server empire)
-                   |--- data (server specific data such as stars.db)
+                   |--- data (server empire specific data such as stars.db)
                    |--- log  (empire output data)
      |--- test_empire_pt
-                   |--- data (server specific data such as stars.db)
+                   |--- data (server empire specific data such as stars.db)
      |--- tour_empire_us2
-                   |--- data (server specific data such as stars.db)
+                   |--- data (server empire specific data such as stars.db)
 
 So for when I am running scripts, I am in the norway_us1 directory,
 most scripts are called:
