@@ -5,6 +5,8 @@
 #you'll need to add it into the spaceport.pm file in lib\games\lacuna\client\buildings
 #at the end of the api_methods add- send_ship_types         => { default_args => [qw(session_id)] },
 
+#added seconds
+
 
 use strict;
 use warnings;
@@ -75,6 +77,8 @@ use Exception::Class;
   my $arrivalhour = <>;
   print "Minute:";
   my $arrivalminute = <>;
+  print "Second (must be 0,15,30,45):";
+  my $arrivalsecond = <>;
   my $arrival = maketimehash();    
   my $planettoattack = makeplanethash();
   my $shipstosend = makeshiptypehash();
@@ -165,8 +169,8 @@ PLANET:
             if ($amounttosend < 20) {
               $shipstosend->{quantity} = $amounttosend;
             }
+            print "$amounttosend left...";
             $sp_pt->send_ship_types(int($planet->{id}),$planettoattack, \@shiparraytosend, $arrival);
-            print "$amounttosend sent...";
             $amounttosend -= 20;
           } until ($amounttosend < 1);
         }
@@ -210,7 +214,7 @@ sub maketimehash {
     $has->{'day'} = $arrivalday;
     $has->{'hour'} = $arrivalhour;
     $has->{'minute'} = $arrivalminute;
-    $has->{'second'} = "00";
+    $has->{'second'} = $arrivalsecond;
     return $has;
 }
 
