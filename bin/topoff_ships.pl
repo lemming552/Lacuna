@@ -213,7 +213,7 @@ use utf8;
           else {
             $queued_ships += $ships_to_queue;
           }
-          if ($queued_ships > $build_num) {
+          if ($queued_ships >= $build_num) {
             print "Done with $pname.\n";
             next PLANET;
           }
@@ -222,6 +222,7 @@ use utf8;
 #    "build_queue_max" : 60,        # maximum queueable ships
 #    "build_queue_used" : 3
       }
+      printf "Queued %3d %s ships on %s\n",$queued_ships, $ship_build, $pname;
     }
     else {
       print "Already at needed number\n";
