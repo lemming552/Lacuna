@@ -327,16 +327,17 @@ sub send_ship {
         ],
     );
     
-    print "Sent fleet to: $target_name from $return->{ship}{from}{name}\n";
+    print "Sent ship to: $target_name from $return->{ship}{from}{name}\n";
     
-    printf qq{\t%s "%s" arriving %s: %s:%s -> %s:%s\n},
+    printf qq{\t%s "%s" arriving %s: %s:%s -> %s:%s at %d speed\n},
         $return->{ship}{type_human},
         $return->{ship}{name},
         $return->{ship}{date_arrives},
         $return->{ship}{from}{name},
         $return->{ship}{from}{id},
         $return->{ship}{to}{name},
-        $return->{ship}{to}{id};
+        $return->{ship}{to}{id},
+        $return->{ship}{fleet_speed};
 }
 
 sub send_fleet {
@@ -358,14 +359,15 @@ sub send_fleet {
 #           " at speed: ", $return->{fleet}{fleet_speed}, "\n";
     
     for my $ship ( @{ $return->{fleet} } ) {
-        printf qq{\t%s "%s" arriving %s: %s:%s -> %s:%s\n},
+        printf qq{\t%s "%s" arriving %s: %s:%s -> %s:%s at %d speed\n},
             $ship->{ship}{type_human},
             $ship->{ship}{name},
             $ship->{ship}{date_arrives},
             $ship->{ship}{from}{name},
             $ship->{ship}{from}{id},
             $ship->{ship}{to}{name},
-            $ship->{ship}{to}{id};
+            $ship->{ship}{to}{id},
+            $ship->{ship}{fleet_speed};
     }
 }
 

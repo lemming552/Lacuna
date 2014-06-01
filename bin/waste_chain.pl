@@ -12,7 +12,7 @@ use Date::Format;
 use utf8;
 
   my %opts = (
-    h          => 0,
+    help       => 0,
     v          => 0,
     config     => "lacuna.yml",
     logfile    => "log/waste_chain.js",
@@ -52,7 +52,7 @@ use utf8;
       die "Did not provide a config file";
     }
   }
-  usage() if ($opts{h});
+  usage() if ($opts{help});
   my $json = JSON->new->utf8(1);
 
   if ($opts{equalize}) {
@@ -222,7 +222,13 @@ use utf8;
       }
     }
   
-    my $new_chain_hour = $waste_prod - $update;
+    my $new_chain_hour;
+    if (defined $update) {
+      $new_chain_hour = $waste_prod - $update;
+    }
+    else {
+      $new_chain_hour = $waste_hour;
+    }
     if ($opts{recalc} and $new_chain_hour != $waste_hour) {
       print "Chain per hour being changed from $waste_hour to $new_chain_hour\n";
       $result = $tm->update_waste_chain($chain_id , $new_chain_hour);
