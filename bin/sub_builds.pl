@@ -109,3 +109,8 @@ Options:
 END
 exit 1;
 }
+
+sub diag {
+    my ($msg) = @_;
+    print STDERR $msg;
+}
