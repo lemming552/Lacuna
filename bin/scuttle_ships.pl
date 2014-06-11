@@ -33,6 +33,7 @@ use Exception::Class;
         config => "lacuna.yml",
         outfile => 'log/scuttle.js',
         sleep   => 1,
+        skipSS  => 0,
         confirm => 1,
         number  => 10000,
   );
@@ -46,6 +47,7 @@ use Exception::Class;
     'stealth=i',
     'planet=s@',
     'skip=s@',
+    'skipSS=s',
     'legacy',
     'confirm!',
     'v|verbose',
@@ -95,6 +97,7 @@ use Exception::Class;
   $topok = eval {
 PLANET:
     for $pname (@plist) {
+      next if $pname =~ /$opts{skipSS}/;
       print "Inspecting $pname\n";
       my $planet    = $glc->body(id => $planets{$pname});
       my $result    = $planet->get_buildings;
