@@ -31,6 +31,7 @@ use Exception::Class;
     'v|verbose',
     'planet=s@',
     'skip=s@',
+    'skipSS=s',
     'config=s',
     'dumpfile=s',
     'maxadd=i',
@@ -83,6 +84,7 @@ use Exception::Class;
     my @skip_planets;
     for $pname (sort keys %planets) {
       unless (grep { $pname eq $_ } @plist) {
+        next if $pname =~ /$opts{skipSS}/;
         push @skip_planets, $pname;
         next;
       }
@@ -141,12 +143,12 @@ use Exception::Class;
         push @skip_planets, $pname;
       }
     }
-    print "Done or skipping: ",join(":", sort @skip_planets), "\n";
+    print "Done or skipping: ",join(", ", sort @skip_planets), "\n";
     for $pname (@skip_planets) {
       delete $planets{$pname};
     }
     if (keys %planets) {
-      print "Clearing Queue for ",sec2str($lowestqueuetimer),".\n";
+      print "Clearing Queue for ",sec2str($lowestqueuetimer),".\n\n";
       sleep $lowestqueuetimer if $lowestqueuetimer > 0;
       $lowestqueuetimer = $opts{wait} - 1;
     }
@@ -169,6 +171,9 @@ sub planet_list {
   for my $pname (sort keys %$phash) {
     if ($opts->{skip}) {
       next if (grep { $pname eq $_ } @{$opts->{skip}});
+    }
+    if ($opts->{skipSS}) {
+      next if $pname =~ /$opts{skipSS}/;
     }
     if ($opts->{planet}) {
       push @good_planets, $pname if (grep { $pname eq $_ } @{$opts->{planet}});
@@ -489,6 +494,7 @@ Options:
   --config FILE      - Specify a GLC config file, normally lacuna.yml
   --planet NAME      - Specify planet
   --skip  PLANET     - Do not process this planet
+  --skipSS STRING    - Skips if regex is matched
   --dumpfile FILE    - data dump for all the info we don't print
   --maxlevel INT     - do not upgrade if this level has been achieved
   --maxnum INT       - Use this if lower than dev ministry level
