@@ -40,6 +40,7 @@ use utf8;
     'number=i',
     'minlevel=i',
     'maxqueue=i',
+    'skipSS=s',
     'sleep=i',
     'mining',
     'chain',
@@ -50,7 +51,7 @@ use utf8;
   );
 
   usage() unless $ok;
-  usage() if $opts{help} or !$opts{planet} or !$opts{type};
+  usage() if $opts{help} or !$opts{type};
   usage() unless ($opts{number} or $opts{maintain});
 
   my @ship_types = ship_types();
@@ -101,6 +102,7 @@ use utf8;
 
   PLANET:
   foreach my $pname (sort keys %planets) {
+    next if $pname =~ /$opts{skipSS}/;
     next PLANET if ($opts{planet} and not (grep { $pname eq $_ } @{$opts{planet}}));
     my $planet = $glc->body( id => $planets{$pname} );
     my $buildings = $planet->get_buildings->{buildings};
@@ -248,6 +250,7 @@ Usage: $0 --planet PLANET --number NUMBER --maintain NUMBER
   --number    number     - Number of ships you wish to produce.
   --minlevel  number     - Minimum Level of Shipyard to use. default 30.
   --maxqueue  number     - Maximum to put into any queue. default 50.
+  --skipSS STRING        - Skips if regex is matched
   --sleep     number     - RPC Sleep delay
   --mining               - Include ships on mining to count toward maintanance
   --chain                - Include ships on waste or supply chains to count toward maintanance
