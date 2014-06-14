@@ -18,6 +18,7 @@ use Exception::Class;
         maxnum => 31,
         config => "lacuna.yml",
         dumpfile => "log/all_builds.js",
+        skipSS  => 0,
         station => 0,
         maxadd  => 31,
         wait    => 8 * 60 * 60,
