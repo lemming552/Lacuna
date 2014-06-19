@@ -160,25 +160,27 @@ use Exception::Class;
           }
           if ($spy_name ne $new_name) {
             my $ok;
-            do {
-              $ok = eval {
-                $int_id->name_spy( $spy_id, $new_name);
-                $call_done = 1;
-              };
-              unless ($ok) {
-                my $error = $@;
-                if ($error =~ /1010/) {
-                  print $error, " taking a minute off.\n";
-                  sleep(60);
+            unless ($opts{dryrun} ) {
+              do {
+                $ok = eval {
+                  $int_id->name_spy( $spy_id, $new_name);
+                  $call_done = 1;
+                };
+                unless ($ok) {
+                  my $error = $@;
+                  if ($error =~ /1010/) {
+                    print $error, " taking a minute off.\n";
+                    sleep(60);
+                  }
+                  elsif ($error =~ /1005/) {
+                    print "$error -> $new_name\n";
+                  }
+                  else {
+                    die $error;
+                  }
                 }
-                elsif ($error =~ /1005/) {
-                  print "$error -> $new_name\n";
-                }
-                else {
-                  die $error;
-                }
-              }
-            } until ($ok);
+              } until ($ok);
+            }
           }
           else {
             $get_new = 0;
@@ -189,9 +191,14 @@ use Exception::Class;
         my $loffdef = sprintf("(%d/%d/%d)", $spy_r->{level}, $spy_r->{offense_rating}, $spy_r->{defense_rating});
         my $result = "";
         if ($opts{counter} and $cplanet eq $pname and $task eq "Idle") {
-          $result = $int_id->assign_spy($spy_id, "Counter Espionage");
-          $task = "Counter ".$result->{'mission'}->{'result'};
-          $call_done = 1;
+            if ($opts{dryrun}) {
+              $task = "Counter dryrun";
+            }
+            else {
+              $result = $int_id->assign_spy($spy_id, "Counter Espionage");
+              $task = "Counter ".$result->{'mission'}->{'result'};
+              $call_done = 1;
+            }
         }
         if ($get_new) {
           print "$spy_name is now $new_name - $loffdef - $task on $cplanet.\n";
@@ -243,13 +250,14 @@ Options:
   --help             - This info.
   --verbose          - Print out more information such as affinities.
   --config <file>    - Specify a GLC config file, normally lacuna.yml
-  --planet <name>    - Specify planet with genelab.
+  --planet <name>    - Specify planet with Intelligence Ministry.
   --dumpfile         - data dump for all the info we don not print, default data/data_agent.js
   --names            - Name file, default data/agents.js
   --counter          - Set agent on counter.
   --all              - Rename all agents. Names might not change.
   --sleep            - Sleep interval.
   --rand             - Choose names from list in random order instead of ID order.
+  --dryrun           - Just print what would happen, but don't change anything.
 END
   exit 1;
 }
