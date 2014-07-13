@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
-# newpie_pack script initially requested by United Federation
+# this was a very old script i found
+# basically re-created from scratch to work on the SST with several useful options
+# Delgan
 
 use strict;
 use warnings;
