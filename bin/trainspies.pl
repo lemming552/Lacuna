@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 #
-#based on upgrade_all script
-
+#based loosely on upgrade_all script
+#having a lot of planets with lots of spies... you just need a better way to train them
+#Delgan
 
 use strict;
 use warnings;
