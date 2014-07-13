@@ -82,25 +82,34 @@ my $gcounteragents = 0;
       }
       #finding buildings to get planet training capabilities
       my $bld = first {$buildings->{$_}->{name} eq 'Intelligence Ministry'} keys %$buildings;
-      my $bldministry = $glc->building( id => $bld, type => 'Intelligence');
+      my $bldministry = $glc->building( id => $bld, type => 'Intelligence') if ($bld);
       
       $bld = first {$buildings->{$_}->{name} eq 'Theft Training'} keys %$buildings;
-      my $bldthefttraining = $glc->building( id => $bld, type => 'TheftTraining');
+      my $bldthefttraining = $glc->building( id => $bld, type => 'TheftTraining') if ($bld);
       
       $bld = first {$buildings->{$_}->{name} eq 'Politics Training'} keys %$buildings;
-      my $bldpoliticstraining = $glc->building( id => $bld, type => 'PoliticsTraining');
+      my $bldpoliticstraining = $glc->building( id => $bld, type => 'PoliticsTraining') if ($bld);
       
       $bld = first {$buildings->{$_}->{name} eq 'Mayhem Training'} keys %$buildings;
-      my $bldmayhemtraining = $glc->building( id => $bld, type => 'MayhemTraining');
+      my $bldmayhemtraining = $glc->building( id => $bld, type => 'MayhemTraining') if ($bld);
       
       $bld = first {$buildings->{$_}->{name} eq 'Intel Training'} keys %$buildings;
-      my $bldinteltraining = $glc->building( id => $bld, type => 'IntelTraining');
+      my $bldinteltraining = $glc->building( id => $bld, type => 'IntelTraining') if ($bld);
       
       #get view of each building for max_points & points per hour
-      my $viewintel = $bldinteltraining->view->{spies};
-      my $viewtheft = $bldthefttraining->view->{spies};
-      my $viewpolitics = $bldpoliticstraining->view->{spies};
-      my $viewmayhem = $bldmayhemtraining->view->{spies};
+      my $viewintel;
+      my $viewtheft;
+      my $viewpolitics;
+      my $viewmayhem;
+      if (!$bldministry) {
+          printf "no ministry on this planet, skipping.\n";
+          next;
+      }
+      if ($bldinteltraining) {$viewintel = $bldinteltraining->view->{spies};}
+      if ($bldthefttraining) {$viewtheft = $bldthefttraining->view->{spies};}
+      if ($bldpoliticstraining) {$viewpolitics = $bldpoliticstraining->view->{spies};}
+      if ($bldmayhemtraining) {$viewmayhem = $bldmayhemtraining->view->{spies};}
+
       
       
       
@@ -138,12 +147,18 @@ my $gcounteragents = 0;
           printf "$counteragents spies performing counter espionage to check\n";
           printf "$trainidle spies idle need assigned\n";
           
+          if (!$bldinteltraining) {$trainintel=100;}
+          if (!$bldthefttraining) {$traintheft=100;}
+          if (!$bldpoliticstraining) {$trainpolitics=100;}
+          if (!$bldmayhemtraining) {$trainmayhem=100;}
+          
           $counteragents = 0;
           
           #now assigning idle spies training if they are not maxed out
           #if they are maxed out they will be renamed "maxplanetname"
           
           for my $spy (@idlespies) {
+              if ($bldpoliticstraining) {
               if (($spy->{politics} < $viewpolitics->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
                   if (($trainpolitics <= $trainintel) && ($trainpolitics <= $trainmayhem) && ($trainpolitics <= $traintheft)) {
                       if ($opts{renameagents}) {
@@ -159,7 +174,8 @@ my $gcounteragents = 0;
                       }
                       next;
                   }  
-              }
+              }}
+              if ($bldinteltraining) {
               if (($spy->{intel} < $viewintel->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
                   if (($trainintel <= $trainpolitics) && ($trainintel <= $trainmayhem) && ($trainintel <= $traintheft)) {
                       if ($opts{renameagents}) {
@@ -175,7 +191,8 @@ my $gcounteragents = 0;
                       }
                       next;
                   }  
-              }
+              }}
+              if ($bldmayhemtraining) {
               if (($spy->{mayhem} < $viewmayhem->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
                   if (($trainmayhem <= $trainpolitics) && ($trainmayhem <= $trainintel) && ($trainmayhem <= $traintheft)) {
                       if ($opts{renameagents}) {
@@ -191,7 +208,8 @@ my $gcounteragents = 0;
                       }
                       next;
                   }  
-              }
+              }}
+              if ($bldthefttraining) {
               if (($spy->{theft} < $viewtheft->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
                   if (($traintheft <= $trainpolitics) && ($traintheft <= $trainintel) && ($traintheft <= $trainmayhem)) {
                       if ($opts{renameagents}) {
@@ -207,7 +225,7 @@ my $gcounteragents = 0;
                       }
                       next;
                   }  
-              }
+              }}
               if (($opts{renameagents}) && ($spy->{assigned_to}->{name} eq $pname)) {
                   $bldministry->name_spy($spy,'Max-' && $pname);
                   printf "Spy is maxed out for current building levels, renaming to: $spy->{name}\n";
@@ -216,7 +234,12 @@ my $gcounteragents = 0;
                   $counteragents ++;
               }    
           }   
-          #outputting planet info for global info
+          #outputting planet info for global info, resetting fake values first however
+          if (!$bldinteltraining) {$trainintel=0;}
+          if (!$bldthefttraining) {$traintheft=0;}
+          if (!$bldpoliticstraining) {$trainpolitics=0;}
+          if (!$bldmayhemtraining) {$trainmayhem=0;}
+          
           $gtrainpolitics +=$trainpolitics;
           $gtrainintel +=$trainintel;
           $gtrainmayhem +=$trainmayhem;
