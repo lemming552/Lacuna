@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 
-# this was a very old script i found
-# basically re-created from scratch to work on the SST with several useful options
-# Delgan
+# newpie_pack script initially requested by United Federation
 
 use strict;
 use warnings;
@@ -34,6 +32,7 @@ my $addhalls = 0;
 my $hallscount = 50;
 my $onlyhalls = 0;
 my $addmissionplans = 0;
+my $timestopost = 1;
 
 GetOptions(
   'h|help'         => \$h,
@@ -47,6 +46,7 @@ GetOptions(
   "hallscount=i"    => \$hallscount,
   "onlyhalls"       => \$onlyhalls,
   "addmissionplans" => \$addmissionplans,
+  "timestopost=i"   => \$timestopost,
 );
 
   usage() if ($h or !$price);
@@ -208,9 +208,13 @@ if ($addhalls or $onlyhalls) {
     }
 }
 
+foreach my $i (0..$timestopost) {
+    my $stat = $trade->add_to_market(\@planstotrade,int($price));
+    printf "Posted Trade ID: $stat->{trade_id}\n";
+}
 
-my $stat = $trade->add_to_market(\@planstotrade,int($price));
-printf "Posted Trade ID: $stat->{trade_id}\n";
+
+
 
 print "Ending   RPC: $glc->{rpc_count}\n";
 
@@ -233,6 +237,7 @@ Options:
   --addhalls              - add halls of vrbansk into the pack
   --hallscount            - amount of halls to add
   --onlyhalls             - Just post a halls pack
+  --timestopost           - How many trade posts to make (default 1)
   
 END
   exit 1;
