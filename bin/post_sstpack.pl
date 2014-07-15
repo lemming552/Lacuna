@@ -208,7 +208,7 @@ if ($addhalls or $onlyhalls) {
     }
 }
 
-foreach my $i (0..$timestopost) {
+foreach my $i (1..$timestopost) {
     my $stat = $trade->add_to_market(\@planstotrade,int($price));
     printf "Posted Trade ID: $stat->{trade_id}\n";
 }
