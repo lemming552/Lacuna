@@ -250,7 +250,9 @@ Usage: $0 --planet PLANET --number NUMBER --maintain NUMBER
   --number    number     - Number of ships you wish to produce.
   --minlevel  number     - Minimum Level of Shipyard to use. default 30.
   --maxqueue  number     - Maximum to put into any queue. default 50.
-  --skipSS STRING        - Skips if regex is matched
+  --skipSS <string>      - Skips if regex is matched
+                           Example use: --skipSS "^(S|Z)ASS"
+                           The above skips all SS starting with SASS or ZASS.
   --sleep     number     - RPC Sleep delay
   --mining               - Include ships on mining to count toward maintanance
   --chain                - Include ships on waste or supply chains to count toward maintanance
