@@ -314,6 +314,9 @@ Options:
   --planet           - list of planets to scuttle from, if omitted
                        all planets will be enumerated through
   --skip             - list of planets to skip
+  --skipSS <string>  - Skips if regex is matched
+                       Example use: --skipSS "^(S|Z)ASS"
+                       The above skips all SS starting with SASS or ZASS.
   --number           - scuttle up to this number of ships.
   --hold             - scuttle ships lower than this hold size
   --combat           - scuttle ships lower than this combat level
