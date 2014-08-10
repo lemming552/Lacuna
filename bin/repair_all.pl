@@ -196,8 +196,8 @@ Options:
   --station          - Repair Station Modules
   --sleep            - Sleep interval between api calls.
   --skipSS <string>  - Skips if regex is matched
-                            Example use: --skipSS "^(S|Z)ASS"
-                            The above skips all SS starting with SASS or ZASS.
+                       Example use: --skipSS "^(S|Z)ASS"
+                       The above skips all SS starting with SASS or ZASS.
 END
   exit 1;
 }
