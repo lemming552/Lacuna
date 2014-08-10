@@ -495,7 +495,9 @@ Options:
   --config FILE      - Specify a GLC config file, normally lacuna.yml
   --planet NAME      - Specify planet
   --skip  PLANET     - Do not process this planet
-  --skipSS STRING    - Skips if regex is matched
+  --skipSS <string>  - Skips if regex is matched
+                       Example use: --skipSS "^(S|Z)ASS"
+                       The above skips all SS starting with SASS or ZASS.
   --dumpfile FILE    - data dump for all the info we don't print
   --maxlevel INT     - do not upgrade if this level has been achieved
   --maxnum INT       - Use this if lower than dev ministry level
