@@ -20,6 +20,7 @@ use Exception::Class;
         dumpfile  => "log/repairs.js",
         station   => 0, # Don't repair station modules by default
         sleep     => 1, # Sleep 1 second between calls by default
+        skipSS    => 0,
   );
 
   GetOptions(\%opts,
@@ -33,6 +34,7 @@ use Exception::Class;
     'platforms',
     'sleep',
     'station',
+	'skipSS=s',
   );
 
   usage() if $opts{h};
@@ -55,6 +57,13 @@ use Exception::Class;
 # Get planets
   my %planets = map { $empire->{planets}{$_}, $_ } keys %{$empire->{planets}};
   $status->{planets} = \%planets;
+  if ( $opts{skipSS} ) {
+    foreach my $removeSS ( sort keys %planets) {
+      if ( $removeSS =~ /$opts{skipSS}/ ) {
+        delete $planets{$removeSS};
+      }
+    }
+  }
 
   my $keep_going = 1;
   do {
@@ -186,6 +195,9 @@ Options:
   --platforms        - Repair Terra and Gas Platforms
   --station          - Repair Station Modules
   --sleep            - Sleep interval between api calls.
+  --skipSS <string>  - Skips if regex is matched
+                            Example use: --skipSS "^(S|Z)ASS"
+                            The above skips all SS starting with SASS or ZASS.
 END
   exit 1;
 }
