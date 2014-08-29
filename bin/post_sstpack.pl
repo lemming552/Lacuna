@@ -122,11 +122,15 @@ my $trade_id = first {
     
 my $trade = $glc->building( id => $trade_id, type => 'Transporter');  
 
+#moved loop of timestopost up to here for when plans run on a previous posting
+foreach my $i (1..$timestopost) {
+
 my $plans_result = $trade->get_plan_summary();
 my @plans = @{ $plans_result->{plans} };
 @plans = sort {$b->{extra_build_level} <=> $a->{extra_build_level}} @plans;
 my @planstotrade;
           
+
 #searching through glyph building list if chosen   
 if (!$onlyhalls) {                 
 for my $glyphbase (@$glyph) {
@@ -208,9 +212,10 @@ if ($addhalls or $onlyhalls) {
     }
 }
 
-foreach my $i (1..$timestopost) {
+
     my $stat = $trade->add_to_market(\@planstotrade,int($price));
     printf "Posted Trade ID: $stat->{trade_id}\n";
+    printf "\n";
 }
 
 
