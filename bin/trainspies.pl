@@ -166,13 +166,13 @@ my $gcounteragents = 0;
               
               my $trainableareas = 0;
               if ($bldpoliticstraining) {
-                if ($spy->{politics} <= $viewpolitics->{max_points}) {$trainableareas+=1;}}
+                if ($spy->{politics} < $viewpolitics->{max_points}) {$trainableareas+=1;}}
               if ($bldinteltraining) {
-                if ($spy->{intel} <= $viewintel->{max_points}) {$trainableareas+=2;}}
+                if ($spy->{intel} < $viewintel->{max_points}) {$trainableareas+=2;}}
               if ($bldmayhemtraining) {
-                if ($spy->{mayhem} <= $viewmayhem->{max_points}) {$trainableareas+=4;}}
+                if ($spy->{mayhem} < $viewmayhem->{max_points}) {$trainableareas+=4;}}
               if ($bldthefttraining) {
-                if ($spy->{theft} <= $viewtheft->{max_points}) {$trainableareas+=8;}}
+                if ($spy->{theft} < $viewtheft->{max_points}) {$trainableareas+=8;}}
                 
               if ($trainpolitics >= $opts{maxspiesperfield}) {$trainableareas-=1;}
               if ($trainintel >= $opts{maxspiesperfield}) {$trainableareas-=2;}
