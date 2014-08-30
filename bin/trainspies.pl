@@ -17,6 +17,7 @@ use Getopt::Long;
 use IO::Handle;
 use List::Util qw(min max sum first);
 use File::Path;
+use Switch;
 
 autoflush STDOUT 1;
 autoflush STDERR 1;
@@ -26,9 +27,10 @@ autoflush STDERR 1;
         v => 0,
         d => 0,
         sleep => 2,
-        renameagents => 0,
         checkcounteragents => 0,
         config => "lacuna.yml",
+        maxspiesperfield => 10,
+        checktrainingspies => 0,
   );
 
   my $ok = GetOptions(\%opts,
@@ -38,8 +40,9 @@ autoflush STDERR 1;
     'sleep=i',
     'skip=s',
     'planet=s',
-    'renameagents',
     'checkcounteragents',
+    'maxspiesperfield=i',
+    'checktrainingspies',
   );
 
   usage() if (!$ok or $opts{h});
@@ -132,6 +135,7 @@ my $gcounteragents = 0;
               if ($spy->{assignment} eq 'Mayhem Training') {$trainmayhem ++;}
               if ($spy->{assignment} eq 'Theft Training') {$traintheft ++;}
               if ($spy->{assignment} eq 'Intel Training') {$trainintel ++;}
+              if ((index($spy->{assignment},'Training') != -1) && ($opts{checktrainingspies})) {push @idlespies, $spy;;}
               if ($spy->{assignment} eq 'Idle') {
                   $trainidle ++;
                   push @idlespies, $spy;
@@ -145,102 +149,318 @@ my $gcounteragents = 0;
           printf "$trainintel spies training intel\n";
           printf "$trainmayhem spies training mayhem\n";
           printf "$traintheft spies training theft\n";
-          printf "$counteragents spies performing counter espionage to check\n";
+          printf "$counteragents spies performing counter espionage\n";
           printf "$trainidle spies idle need assigned\n";
           
-          if (!$bldinteltraining) {$trainintel=100;}
-          if (!$bldthefttraining) {$traintheft=100;}
-          if (!$bldpoliticstraining) {$trainpolitics=100;}
-          if (!$bldmayhemtraining) {$trainmayhem=100;}
-          
-          $counteragents = 0;
-          
-          #now assigning idle spies training if they are not maxed out
-          #if they are maxed out they will be renamed "maxplanetname"
-          
           for my $spy (@idlespies) {
+              if ($spy->{assigned_to}->{name} ne $pname) {next;}
+              #using bits to determine what this spy can still be trained in
+              #long and arduous switch needed this way, but not a lot of RPCs
+              
+              if ($spy->{assignment} eq 'Politics Training') {$trainpolitics --;}
+              if ($spy->{assignment} eq 'Mayhem Training') {$trainmayhem --;}
+              if ($spy->{assignment} eq 'Theft Training') {$traintheft --;}
+              if ($spy->{assignment} eq 'Intel Training') {$trainintel --;}
+              if ($spy->{assignment} eq 'Counter Espionage') {$counteragents --;}
+              if ($spy->{assignment} eq 'Idle') {$trainidle --;}
+              
+              my $trainableareas = 0;
               if ($bldpoliticstraining) {
-              if (($spy->{politics} < $viewpolitics->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
-                  if (($trainpolitics <= $trainintel) && ($trainpolitics <= $trainmayhem) && ($trainpolitics <= $traintheft)) {
-                      if ($opts{renameagents}) {
-                          $bldministry->name_spy($spy,'recruit-politics');
-                      }
-                      my $result = $bldministry->assign_spy($spy,'Politics Training');
-                      printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
-                      if ($result->{mission}->{result} eq 'Accepted') {
-                          $trainpolitics ++;
-                      }
-                      else {
-                          printf "skipping this weirdo spy\n";
-                      }
-                      next;
-                  }  
-              }}
+                if ($spy->{politics} <= $viewpolitics->{max_points}) {$trainableareas+=1;}}
               if ($bldinteltraining) {
-              if (($spy->{intel} < $viewintel->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
-                  if (($trainintel <= $trainpolitics) && ($trainintel <= $trainmayhem) && ($trainintel <= $traintheft)) {
-                      if ($opts{renameagents}) {
-                          $bldministry->name_spy($spy,'recruit-intel');
-                      }
-                      my $result = $bldministry->assign_spy($spy,'Intel Training');
-                      printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
-                      if ($result->{mission}->{result} eq 'Accepted') {
-                          $trainintel ++;
-                      }
-                      else {
-                          printf "skipping this weirdo spy\n";
-                      }
-                      next;
-                  }  
-              }}
+                if ($spy->{intel} <= $viewintel->{max_points}) {$trainableareas+=2;}}
               if ($bldmayhemtraining) {
-              if (($spy->{mayhem} < $viewmayhem->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
-                  if (($trainmayhem <= $trainpolitics) && ($trainmayhem <= $trainintel) && ($trainmayhem <= $traintheft)) {
-                      if ($opts{renameagents}) {
-                          $bldministry->name_spy($spy,'recruit-mayhem');
-                      }
-                      my $result = $bldministry->assign_spy($spy,'Mayhem Training');
-                      printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
-                      if ($result->{mission}->{result} eq 'Accepted') {
-                          $trainmayhem ++;
-                      }
-                      else {
-                          printf "skipping this weirdo spy\n";
-                      }
-                      next;
-                  }  
-              }}
+                if ($spy->{mayhem} <= $viewmayhem->{max_points}) {$trainableareas+=4;}}
               if ($bldthefttraining) {
-              if (($spy->{theft} < $viewtheft->{max_points}) && ($spy->{assigned_to}->{name} eq $pname)) {
-                  if (($traintheft <= $trainpolitics) && ($traintheft <= $trainintel) && ($traintheft <= $trainmayhem)) {
-                      if ($opts{renameagents}) {
-                          $bldministry->name_spy($spy,'recruit-theft');
-                      }
+                if ($spy->{theft} <= $viewtheft->{max_points}) {$trainableareas+=8;}}
+                
+              if ($trainpolitics >= $opts{maxspiesperfield}) {$trainableareas-=1;}
+              if ($trainintel >= $opts{maxspiesperfield}) {$trainableareas-=2;}
+              if ($trainmayhem >= $opts{maxspiesperfield}) {$trainableareas-=4;}
+              if ($traintheft >= $opts{maxspiesperfield}) {$trainableareas-=8;}
+              
+              switch ($trainableareas) {
+                  #can train any area
+                  case 15 {
+                      if (($trainpolitics <= $trainintel) && ($trainpolitics <= $trainmayhem) && ($trainpolitics <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      if (($trainintel <= $trainpolitics) && ($trainintel <= $trainmayhem) && ($trainintel <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Intel Training');
+                          printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainintel ++;
+                          }
+                          next;
+                      }  
+                      if (($trainmayhem <= $trainpolitics) && ($trainmayhem <= $trainintel) && ($trainmayhem <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                          printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainmayhem ++;
+                          }
+                          next;
+                      }  
                       my $result = $bldministry->assign_spy($spy,'Theft Training');
                       printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
                       if ($result->{mission}->{result} eq 'Accepted') {
                           $traintheft ++;
                       }
-                      else {
-                          printf "skipping this weirdo spy\n";
+                      next;
+                  }
+                  #cannot train politics
+                  case 14 {  
+                      if (($trainintel <= $trainmayhem) && ($trainintel <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Intel Training');
+                          printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainintel ++;
+                          }
+                          next;
+                      }  
+                      if (($trainmayhem <= $trainintel) && ($trainmayhem <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                          printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainmayhem ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
                       }
                       next;
-                  }  
-              }}
-              if (($opts{renameagents}) && ($spy->{assigned_to}->{name} eq $pname)) {
-                  $bldministry->name_spy($spy,'Max-' && $pname);
-                  printf "Spy is maxed out for current building levels, renaming to: $spy->{name}\n";
-                  my $result = $bldministry->assign_spy($spy,'Counter Espionage');
-                  printf "Spy $spy->{name} to perform Counter Espionage result: $result->{mission}->{result}\n";
-                  $counteragents ++;
-              }    
-          }   
-          #outputting planet info for global info, resetting fake values first however
-          if (!$bldinteltraining) {$trainintel=0;}
-          if (!$bldthefttraining) {$traintheft=0;}
-          if (!$bldpoliticstraining) {$trainpolitics=0;}
-          if (!$bldmayhemtraining) {$trainmayhem=0;}
+                  }
+                  #cannot train intel
+                  case 13 {
+                      if (($trainpolitics <= $trainmayhem) && ($trainpolitics <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      if (($trainmayhem <= $trainpolitics) && ($trainmayhem <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                          printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainmayhem ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
+                      }
+                      next;
+                  }
+                  #cannot train intel or politics
+                  case 12 { 
+                      if ($trainmayhem <= $traintheft) {
+                          my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                          printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainmayhem ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
+                      }
+                      next; 
+                  }
+                  #cannot train mayhem
+                  case 11 {
+                      if (($trainpolitics <= $trainintel) && ($trainpolitics <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      if (($trainintel <= $trainpolitics) && ($trainintel <= $traintheft)) {
+                          my $result = $bldministry->assign_spy($spy,'Intel Training');
+                          printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainintel ++;
+                          }
+                          next;
+                      }   
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
+                      }
+                      next; 
+                  }
+                  #cannot train politics or mayhem
+                  case 10 {
+                      if ($trainintel <= $traintheft) {
+                          my $result = $bldministry->assign_spy($spy,'Intel Training');
+                          printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainintel ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
+                      }
+                      next; 
+                  }
+                  #cannot train intel or mayhem
+                  case 9 {
+                      if ($trainpolitics <= $traintheft) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
+                      }
+                      next;
+                  }
+                  #cannot only train theft
+                  case 8 {
+                      my $result = $bldministry->assign_spy($spy,'Theft Training');
+                      printf "Spy $spy->{name} to train Theft result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $traintheft ++;
+                      }
+                      next; 
+                  }
+                  #cannot train theft
+                  case 7 {
+                      if (($trainpolitics <= $trainintel) && ($trainpolitics <= $trainmayhem)) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      if (($trainintel <= $trainpolitics) && ($trainintel <= $trainmayhem) ) {
+                          my $result = $bldministry->assign_spy($spy,'Intel Training');
+                          printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainintel ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                      printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainmayhem ++;
+                      }
+                      next;   
+                  }
+                  #cannot train theft or politics
+                  case 6 {
+                      if ($trainintel <= $trainmayhem) {
+                          my $result = $bldministry->assign_spy($spy,'Intel Training');
+                          printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainintel ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                      printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainmayhem ++;
+                      }
+                      next;  
+                  }
+                  #cannot train theft or intel
+                  case 5 {
+                      if ($trainpolitics <= $trainmayhem) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                      printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainmayhem ++;
+                      }
+                      next;  
+                  }
+                  #can only train mayhem
+                  case 4 { 
+                      my $result = $bldministry->assign_spy($spy,'Mayhem Training');
+                      printf "Spy $spy->{name} to train Mayhem result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainmayhem ++;
+                      }
+                      next;  
+                  }
+                  #cannot train theft or mayhem
+                  case 3 {
+                      if ($trainpolitics <= $trainintel) {
+                          my $result = $bldministry->assign_spy($spy,'Politics Training');
+                          printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                          if ($result->{mission}->{result} eq 'Accepted') {
+                              $trainpolitics ++;
+                          }
+                          next;
+                      }  
+                      my $result = $bldministry->assign_spy($spy,'Intel Training');
+                      printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainintel ++;
+                      }
+                      next;  
+                  }
+                  #can only train intel
+                  case 2 {
+                      my $result = $bldministry->assign_spy($spy,'Intel Training');
+                      printf "Spy $spy->{name} to train Intel result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainintel ++;
+                      }
+                      next;  
+                  }
+                  #can only train politics
+                  case 1 {
+                      my $result = $bldministry->assign_spy($spy,'Politics Training');
+                      printf "Spy $spy->{name} to train Politics result: $result->{mission}->{result}\n";
+                      if ($result->{mission}->{result} eq 'Accepted') {
+                          $trainpolitics ++;
+                      }
+                      next;  
+                  }
+                  #spy is maxed out- set to counter espionage
+                  case 0 {
+                      my $result = $bldministry->assign_spy($spy,'Counter Espionage');
+                      printf "Spy $spy->{name} to perform Counter Espionage result: $result->{mission}->{result}\n";
+                      $counteragents ++;
+                  } 
+              }
+          }
           
+          #outputting planet info for global info
           $gtrainpolitics +=$trainpolitics;
           $gtrainintel +=$trainintel;
           $gtrainmayhem +=$trainmayhem;
@@ -294,18 +514,6 @@ sub planet_list {
   return @good_planets;
 }
 
-sub sec2str {
-  my ($sec) = @_;
-
-  my $day = int($sec/(24 * 60 * 60));
-  $sec -= $day * 24 * 60 * 60;
-  my $hrs = int( $sec/(60*60));
-  $sec -= $hrs * 60 * 60;
-  my $min = int( $sec/60);
-  $sec -= $min * 60;
-  return sprintf "%04d:%02d:%02d:%02d", $day, $hrs, $min, $sec;
-}
-
 sub usage {
     diag(<<END);
 Usage: $0 [options]
@@ -319,10 +527,15 @@ Options:
   --debug                 - Show everything.
   --verbose               - Print out more information
   --skip                  - Planet that you want to skip
-  --sleep                 - amount of time to sleep in between RPC calls (default=2)
+  --sleep                 - amount of time to sleep in between RPC calls 
+                            (default=2)
   --planet                - Only do this planet
-  --renameagents          - Rename agents to what they're currently doing
-  --checkcounteragents    - Check counter espionage agents to see if they can train higher
+  --checkcounteragents    - Check counter espionage agents to see if they 
+                            can train higher
+  --checktrainingspies    - Will check spies already in training
+  --maxspiesperfield      - Amount of spies allowed to train in each 
+                            field, keep low to max out a smaller 
+                            amount of spies sooner (default=10)
   );
 END
   exit 1;
