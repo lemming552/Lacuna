@@ -114,9 +114,9 @@ do {
     );
     my $d1 = $dp->parse_datetime($status->{server}->{time});
     my $d2 = $dp->parse_datetime($dc);
-    my $dur = $d1->subtract_datetime_absolute($d2);
-    my $qdone = $dur->seconds();
-    #print "Seconds to Queue done + 30: $qdone\n";
+    my $dur = $d2->subtract_datetime_absolute($d1);
+    my $qdone = $dur->in_units('seconds');
+    #print "Seconds to Queue done: $qdone\n";
     sleep $qdone+30;
 } while ($got);
 
