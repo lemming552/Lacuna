@@ -5,7 +5,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use List::Util            qw(min max);
-use List::MoreUtils       qw( uniq );
+use List::MoreUtils       qw(all uniq);
 use Getopt::Long          qw(GetOptions);
 use Games::Lacuna::Client ();
 use JSON;
@@ -17,7 +17,8 @@ $opts{data} = "log/docked_ships.js";
 
 GetOptions(
     \%opts,
-    'planet=s',
+    'planet=s@',
+    'skipSS=s',
     'data=s',
     @specs,
     'travelling',
@@ -44,9 +45,9 @@ unless ( $cfg_file and -e $cfg_file ) {
 }
 
 my $client = Games::Lacuna::Client->new(
-	cfg_file => $cfg_file,
-        rpc_sleep => 2,
-	# debug    => 1,
+    cfg_file => $cfg_file,
+    rpc_sleep => 2,
+    # debug    => 1,
 );
 
 # Load the planets
@@ -68,8 +69,8 @@ my $ship_hash = {};
 
 # Scan each planet
 foreach my $name ( sort keys %planets ) {
-
-    next if defined $opts{planet} && lc $opts{planet} ne lc $name;
+    next if $name =~ /$opts{skipSS}/;
+    next if defined $opts{planet} && all { lc $_ ne lc $name } @{$opts{planet}};
 
     # Load planet data
     my $planet    = $client->body( id => $planets{$name} );
@@ -80,10 +81,10 @@ foreach my $name ( sort keys %planets ) {
 
     # Find the first Space Port
     my $space_port_id = List::Util::first {
-            $buildings->{$_}->{name} eq 'Space Port'
+        $buildings->{$_}->{name} eq 'Space Port'
     }
-      grep { $buildings->{$_}->{level} > 0 and $buildings->{$_}->{efficiency} == 100 }
-      keys %$buildings;
+    grep { $buildings->{$_}->{level} > 0 and $buildings->{$_}->{efficiency} == 100 }
+    keys %$buildings;
 
     next if !$space_port_id;
     
