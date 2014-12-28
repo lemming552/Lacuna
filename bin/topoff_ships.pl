@@ -94,7 +94,7 @@ use utf8;
   my $json = JSON->new->utf8(1);
 
   my $empire  = $glc->empire->get_status->{empire};
-  my $planets = $empire->{planets};
+  my $planets = $empire->{colonies};
 
 # reverse hash, to key by name instead of id
   my %planets = map { $planets->{$_}, $_ } keys %$planets;
