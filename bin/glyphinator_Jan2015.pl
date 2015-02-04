@@ -1062,6 +1062,7 @@ select   o.*, s.name as star_name, s.zone, (o.x - ?) * (o.x - ?) + (o.y - ?) * (
 from     orbitals o
 join     stars s on o.star_id = s.id
 where    type in ('habitable planet', 'asteroid')
+and      (last_excavated is null or date(last_excavated) < date('now', '-30 days'))
 and      o.x between ? and ?
 and      o.y between ? and ?
 and      dist <= $max_squared
