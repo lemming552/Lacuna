@@ -118,8 +118,8 @@ use utf8;
   my $from_id; my $from_own; my $from_name;
   my $to_id;   my $to_own;   my $to_name;
   if ($opts{id}) {
-    $from_id = $opts{to};
-    $to_id   = $opts{from};
+    $from_id = $opts{from};
+    $to_id   = $opts{to};
     ($from_name, $from_own) = get_pname($from_id, $empire);
     ($to_name,   $to_own)   = get_pname($to_id,   $empire);
   }
@@ -164,9 +164,12 @@ use utf8;
   my @spies;
   my @ships;
 
+  printf "Sending from %s:%s:%s to %s:%s:%s\n", $from_id, $from_name,$from_own,$to_id,$to_name,$to_own;
+  print "Getting spy and ship ids from $spy_planet_name\n";
+
   my ($space_port, $intel) = get_bld_pnt($spy_planet_id, $spy_planet_name, $opts{intel});
 
-  print "Getting spy and ship ids from $spy_planet_name\n";
+#  print "Getting spy and ship ids from $spy_planet_name\n";
 
   my $prep;
   my $ok = eval {
@@ -264,7 +267,7 @@ use utf8;
 
       if ($ok) {
         if ($send) { print "Spies sent"; } else { print "Spies fetched"; }
-        print ", arriving ", $sent->{ship}->{date_arrives};
+        print ", arriving ", $sent->{ship}->{date_arrives},"\n";
       }
       else {
         my $error = $@;

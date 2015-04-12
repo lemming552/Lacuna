@@ -70,7 +70,7 @@ use Date::Format;
   my $empire  = $glc->empire->get_status->{empire};
 
 # reverse hash, to key by name instead of id
-  my %planets = reverse %{ $empire->{planets} };
+  my %planets = reverse %{ $empire->{colonies} };
 
   my @spies;
   foreach my $pname (sort keys %planets) {
