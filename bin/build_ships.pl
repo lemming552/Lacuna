@@ -420,7 +420,7 @@ Options:
   --yards     file       - File with shipyard level & ID default data/shipyards.js
   --type      shiptype   - ship type you want to build, partial name fine
   --number    number     - Number of ships you wish to produce at each shipyard
-  --noreserve            - Ignore Reserve number in datafile
+  --reserve              - Override reserve number in datafile
   --time      number     - Run for number of seconds
 END
     my @ship_types = ship_types();
