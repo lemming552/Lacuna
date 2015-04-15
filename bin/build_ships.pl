@@ -16,18 +16,18 @@ my $yard_file = "data/shipyards.js";
 my $help      = 0;
 my $stype;
 my $number    = 0;
-my $noreserve = 0;
+my $reserve;
 my $time;
 my $rpcsleep = 2;
 
-GetOptions(
+my $opt_chk = GetOptions(
     'planet=s@' => \@planets,
     'config=s'  => \$cfg_file,
     'yards=s'   => \$yard_file,
     'type=s'    => \$stype,
     'help'      => \$help,
     'number=i'  => \$number,
-    'noreserve' => \$noreserve,
+    'reserve=i' => \$reserve,
     'time=i'    => \$time,
     'sleep=i'   => \$rpcsleep,
 );
@@ -39,7 +39,7 @@ my $glc = Games::Lacuna::Client->new(
     # debug    => 1,
 );
 
-usage() if $help or scalar @planets == 0 or !$stype;
+usage() if $help or scalar @planets == 0 or !$stype or !$opt_chk;
 
 my @ship_types = ship_types();
 
@@ -78,7 +78,7 @@ if ($time) {
 }
 
 # Get Yard data and verify we can build asked for ship
-my $yhash = setup_yhash( $ydata, $time, $number, $noreserve, \@planets );
+my $yhash = setup_yhash( $ydata, $time, $number, $reserve, \@planets );
 
 my $not_done  = 1;
 my $resume_dt = DateTime->now;
@@ -287,7 +287,7 @@ undef $glc;
 exit;
 
 sub setup_yhash {
-    my ( $ydata, $time, $number, $noreserve, $planets ) = @_;
+    my ( $ydata, $time, $number, $reserve, $planets ) = @_;
 
     my $planet;
     my $yhash;
@@ -317,8 +317,8 @@ sub setup_yhash {
             unless ( defined( $ydata->{"$planet"}->{"$yid"}->{reserve} ) ) {
                 $ydata->{"$planet"}->{"$yid"}->{reserve} = 0;
             }
-            if ($noreserve) {
-                $yhash->{"$planet"}->{reserve} = 0;
+            if (defined $reserve) {
+                $yhash->{"$planet"}->{reserve} = $reserve;
             }
             else {
                 if ( $ydata->{"$planet"}->{"$yid"}->{reserve} >

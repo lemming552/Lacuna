@@ -24,8 +24,19 @@ GetOptions(
     'mining',
     'supply',
     'waste',
+    'wot',
+    'defense',
     'all',
 );
+
+if ($opts{all}) {
+  $opts{travelling} = 1;
+  $opts{mining} = 1;
+  $opts{supply} = 1;
+  $opts{waste} = 1;
+  $opts{wot} = 1;
+  $opts{defense} = 1;
+}
 
 my $cfg_file = shift(@ARGV) || 'lacuna.yml';
 unless ( $cfg_file and -e $cfg_file ) {
@@ -45,7 +56,7 @@ unless ( $cfg_file and -e $cfg_file ) {
 
 my $client = Games::Lacuna::Client->new(
 	cfg_file => $cfg_file,
-        rpc_sleep => 2,
+        rpc_sleep => 1,
 	# debug    => 1,
 );
 
@@ -57,10 +68,12 @@ my %planets = map { $empire->{colonies}{$_}, $_ } keys %{ $empire->{colonies} };
 
 my $total_str     = 'Total Docks';
 my $mining_str    = 'Ships Mining';
+my $travel_str    = 'Ships Travelling';
 my $defend_str    = 'Ships on remote Defense';
 my $supply_str    = 'Ships on Supply Chains';
 my $waste_str     = 'Ships on Waste Chains';
 my $available_str = 'Docks Available';
+my $wot_str       = 'Waiting on Trade';
 my $ttl_ships = 0;
 my $ttl_docks = 0;
 my @all_ships;
@@ -93,14 +106,19 @@ foreach my $name ( sort keys %planets ) {
     my $defend_count    = 0;
     my $supply_count    = 0;
     my $waste_count     = 0;
+    my $travel_count    = 0;
+    my $wot_count       = 0;
     my $filter;
     
-    push @{ $filter->{task} }, 'Mining'
-        if $opts{mining};
-    
-    push @{ $filter->{task} }, 'Travelling'
-        if $opts{travelling};
-    
+#    push @{ $filter->{task} }, 'Mining'
+#        if $opts{mining};
+#    
+#    push @{ $filter->{task} }, 'Travelling'
+#        if $opts{travelling};
+#
+#    push @{ $filter->{task} }, 'Waiting on Trade'
+#        if $opts{wot};
+#    
     my $ships = $space_port->view_all_ships(
         {
             no_paging => 1,
@@ -129,6 +147,16 @@ foreach my $name ( sort keys %planets ) {
         grep {
             $_->{task} eq 'Defend'
         } @$ships;
+
+    $wot_count +=
+        grep {
+            $_->{task} eq 'Waiting on Trade'
+        } @$ships;
+
+    $travel_count +=
+        grep {
+            $_->{task} eq 'Travelling'
+        } @$ships;
     
     @$ships =
         grep {
@@ -146,26 +174,38 @@ foreach my $name ( sort keys %planets ) {
         $space_port_status->{max_ships};
     $ttl_docks += $space_port_status->{max_ships};
     
-    printf "%${max_length}s: %d\n",
-        $mining_str,
-        $mining_count;
+    if ($mining_count) {
+        printf "%${max_length}s: %d\n",
+            $mining_str,
+            $mining_count;
+    }
     
     if ( $supply_count ) {
         printf "%${max_length}s: %d\n",
             $supply_str,
-            $supply_count
+            $supply_count;
     }
 
     if ( $waste_count ) {
         printf "%${max_length}s: %d\n",
             $waste_str,
-            $waste_count
+            $waste_count;
     }
 
     if ( $defend_count ) {
         printf "%${max_length}s: %d\n",
             $defend_str,
-            $defend_count
+            $defend_count;
+    }
+    if ( $wot_count ) {
+        printf "%${max_length}s: %d\n",
+            $wot_str,
+            $wot_count;
+    }
+    if ( $travel_count ) {
+        printf "%${max_length}s: %d\n",
+            $travel_str,
+            $travel_count;
     }
     
     printf "%${max_length}s: %d\n",

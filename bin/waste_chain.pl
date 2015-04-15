@@ -81,8 +81,8 @@ use utf8;
   my $ststr = $data->{status}->{server}->{time};
 
 # reverse hash, to key by name instead of id
-  my %planets = map { $data->{status}->{empire}->{planets}{$_}, $_ }
-                  keys %{ $data->{status}->{empire}->{planets} };
+  my %planets = map { $data->{status}->{empire}->{colonies}{$_}, $_ }
+                  keys %{ $data->{status}->{empire}->{colonies} };
 
   my $output;
   for my $pname ( sort keys %planets) {
@@ -230,6 +230,10 @@ use utf8;
       $new_chain_hour = $waste_hour;
     }
     if ($opts{recalc} and $new_chain_hour != $waste_hour) {
+      if ($new_chain_hour < 0) {
+        print "Chain per hour can not be less than zero, setting it from $new_chain_hour to 1\n";
+        $new_chain_hour = 1;
+      }
       print "Chain per hour being changed from $waste_hour to $new_chain_hour\n";
       $result = $tm->update_waste_chain($chain_id , $new_chain_hour);
       $output->{"$pname"}->{chain} = $result->{waste_chain}->[0];
