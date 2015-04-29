@@ -165,7 +165,8 @@ use JSON;
             launch_y => $ships->{status}->{body}->{y},
             name     => $ship->{name},
             speed    => $ship->{speed},
-            travel   => $ship->{estimated_travel_time},
+            travel   => $ship->{estimated_travel_time} - 300,
+# Five minutes added to travel time messes up calc
             type     => $ship->{type},
             port     => $space_port->{building_id},
           };
@@ -241,6 +242,7 @@ sub set_coords {
     $nhash{orbit} = $elem->{orbit};
     $nhash{zone}  = $elem->{zone};
     push @results, \%nhash;
+    print "Target at $elem->{x}/$elem->{y}\n";
   }
   return @results;
 }
