@@ -42,7 +42,7 @@ use utf8;
       die "Did not provide a config file";
     }
   }
-  usage() if ($opts{h});
+  usage() if ($opts{h} or !$ok);
 #  if (!$opts{planet}) {
 #    print "Need planet with Archeology set with --planet!\n";
 #    usage();
@@ -55,6 +55,7 @@ use utf8;
 
   my $glc = Games::Lacuna::Client->new(
     cfg_file => $opts{config},
+    rpc_sleep => 1,
     # debug    => 1,
   );
 
@@ -63,8 +64,8 @@ use utf8;
   my $ststr = $data->{status}->{server}->{time};
 
 # reverse hash, to key by name instead of id
-  my %planets = map { $data->{status}->{empire}->{planets}{$_}, $_ }
-                  keys %{ $data->{status}->{empire}->{planets} };
+  my %planets = map { $data->{status}->{empire}->{colonies}{$_}, $_ }
+                  keys %{ $data->{status}->{empire}->{colonies} };
 
   my $arch_hash = {};
   foreach my $pname ( sort keys %planets ) {
@@ -140,9 +141,10 @@ sub parse_arch {
     for $excav ( @$excavs ) {
       my $type = $excav->{body}->{image};
       $type =~ s/-[1-8]$//;
-      printf "%20s: %-3s A: %2d, G: %2d, P: %2d, R: %2d, id: %5d\n",
+      printf "%20s: %-3s %7s A: %2d, G: %2d, P: %2d, R: %2d, id: %5d\n",
         $excav->{body}->{name},
         $type,
+        $excav->{distance},
         $excav->{artifact},
         $excav->{glyph},
         $excav->{plan},

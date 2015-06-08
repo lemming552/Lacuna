@@ -10,6 +10,7 @@ use Getopt::Long qw(GetOptions);
 use JSON;
 use Data::Dumper;
 use utf8;
+binmode STDOUT, ":utf8";
 
 my $bld_file = "data/data_builds.js";
 my $help = 0;

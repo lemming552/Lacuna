@@ -12,7 +12,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Games::Lacuna::Client ();
 
-  my $ships_per_fleet = 500;
+  my $ships_per_fleet = 600;
   my $login_attempts  = 5;
   my $reattempt_wait  = 0.1;
 
