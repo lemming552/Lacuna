@@ -36,7 +36,7 @@ my $client = Games::Lacuna::Client->new(
 my $empire  = $client->empire->get_status->{empire};
 
 # reverse hash, to key by name instead of id
-my %planets = reverse %{ $empire->{planets} };
+my %planets = reverse %{ $empire->{colonies} };
 
 my $max_length = max map { length } keys %planets;
 
