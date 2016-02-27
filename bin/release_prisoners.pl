@@ -141,7 +141,7 @@ exit;
 
 sub usage {
   die <<END_USAGE;
-Usage: $0 --to PLANET --from PLANET
+Usage: $0 --planet PLANET
        --config      Config File
        --outfile     Dumpfile of data
        --dump        Dump data
