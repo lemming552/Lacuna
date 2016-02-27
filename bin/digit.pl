@@ -16,6 +16,10 @@ use utf8;
     v          => 0,
     config     => "lacuna.yml",
     logfile   => "log/arch_output.js",
+#    priority  => "monazite,rutile,beryl,gold,chromite,fluorite,bauxite,trona,zircon,chalcopyrite,methane,kerogen,goethite,anthracite,halite,galena,gypsum,uraninite,sulfur,magnetite",
+# "chromite,goethite,anthracite,rutile,bauxite,kerogen,fluorite,trona,beryl,methane,gypsum,magnetite,monazite,chalcopyrite,uraninite,sulfur,zircon,galena,gold,halite",
+
+    priority  => "monazite,gold,anthracite,uraninite,trona,fluorite,kerogen,methane",
   );
 
   my $ok = GetOptions(\%opts,
@@ -25,8 +29,16 @@ use utf8;
     'config=s',
     'excavators',
     'abandon=i',
+    'dig=s',
+    'priority=s',
     'view',
   );
+
+  my @ore_types = qw(monazite rutile beryl gold
+                     chromite fluorite bauxite trona
+                     zircon chalcopyrite methane kerogen
+                     goethite anthracite halite galena
+                     gypsum uraninite sulfur magnetite);
 
   unless ( $opts{config} and -e $opts{config} ) {
     $opts{config} = eval{
@@ -42,11 +54,7 @@ use utf8;
       die "Did not provide a config file";
     }
   }
-  usage() if ($opts{h} or !$ok);
-#  if (!$opts{planet}) {
-#    print "Need planet with Archeology set with --planet!\n";
-#    usage();
-#  }
+  usage() if ($opts{help} or !$ok);
   my $json = JSON->new->utf8(1);
 
   my $params = {};
@@ -67,9 +75,29 @@ use utf8;
   my %planets = map { $data->{status}->{empire}->{colonies}{$_}, $_ }
                   keys %{ $data->{status}->{empire}->{colonies} };
 
+  my @priority_ore;
+  if ($opts{dig}) {
+    if ($opts{dig} eq "priority") {
+      @priority_ore = grep { dumb_match($_, \@ore_types) } split(",", $opts{priority});
+    }
+    elsif ($opts{dig} eq "arch") {
+      die "Upcoming enhancement to look at each arch along the way";
+    }
+    elsif ($opts{dig} eq "stats") {
+      die "Upcoming enhancement to look at stats to prioritize";
+    }
+    elsif (grep { $opts{dig} eq $_ } keys %planets) {
+      die "Upcoming enhancement to figure out via one archmin of empire";
+    }
+    else {
+      print "Wrong argument for dig: $opts{dig}\n";
+      usage();
+    }
+  }
   my $arch_hash = {};
   foreach my $pname ( sort keys %planets ) {
     next if ($opts{planet} and not (grep { lc $pname eq lc $_ } @{$opts{planet}}));
+    print "Working on $pname\n";
 # Load planet data
     my $body   = $glc->body( id => $planets{$pname} );
     my $result = $body->get_buildings;
@@ -105,6 +133,24 @@ use utf8;
       $arch_out = $arch->abandon_excavator($opts{abandon});
       last;
     }
+    elsif ($opts{dig}) {
+      my $ores_avail = $arch->get_ores_available_for_processing();
+      ORE: for my $pore (@priority_ore) {
+        my $quan = $ores_avail->{ore}->{$pore} ? $ores_avail->{ore}->{$pore} : 0;
+        if ($quan > 10_000) {
+          my $ok = eval {
+            $arch_out = $arch->search_for_glyph($pore);
+          };
+          if ($ok) {
+            print "Searching for $pore on $pname.\n";
+          }
+          else {
+            print "Error while searching for $pore on $pname.\n";
+          }
+          last ORE;
+        }
+      }
+    }
     else {
       die "Nothing to do!\n";
     }
@@ -118,7 +164,7 @@ use utf8;
     parse_arch($arch_hash);
   }
   else {
-    print $json->pretty->canonical->encode($arch_hash);
+#    print $json->pretty->canonical->encode($arch_hash);
   }
 
   print "$glc->{total_calls} api calls made.\n";
@@ -154,6 +200,15 @@ sub parse_arch {
   }
 }
 
+sub dumb_match {
+  my ($str, $ref) = @_;
+
+  for my $part (@{$ref}) {
+    return 1 if ($str eq $part);
+  }
+  return 0;
+}
+
 sub usage {
   die <<"END_USAGE";
 Usage: $0 CONFIG_FILE
@@ -164,7 +219,19 @@ Usage: $0 CONFIG_FILE
        --excav          View excavator sites for named planet
        --subsidize      Pay 2e to finish current work
        --view           View options
-
+       --dig  ARG       Do an ore search.
+              ARG can be 1) "priority"  : Use priority option to set dig priority
+                         2) "arch"      : Use current planet glyph inventory to set priority
+                         3) PLANET      : Use PLANET's glyph inventory to see what glyph is least in
+                                          inventory and set a priority string based on it.
+                         4) "stats"     : Make a priority list based on overall stats. Will do least to most popular.
+                         Note: priority is the least RPC use method, though PLANET and stats is only one extra call.
+                               arch has to poll each planet's archeology before searching.
+       --priority STRING  A list of ores seperated by a comma.  Example "sulfur,rutile,anthracite"
+                          If 10,000 units of first ore isn't available, go to next.  If none in the list qualify, skip.
+                          Default Order is: (Based off a glyph list in May 2015)
+                            "monazite,rutile,beryl,gold,chromite,fluorite,bauxite,trona,zircon,chalcopyrite,
+                             methane,kerogen,goethite,anthracite,halite,galena,gypsum,uraninite,sulfur,magnetite"
 END_USAGE
 
 }
